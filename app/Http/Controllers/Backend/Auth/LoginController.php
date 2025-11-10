@@ -71,8 +71,8 @@ class LoginController extends Controller
             if ($user->hasRole('superadmin')) {
                 return redirect('admin/sites');
             } else {
-                // return redirect('admin/admin-sites');
-                return redirect()->route('admin.admin.sites');
+                return redirect('admin/admin-sites');
+                // return redirect()->route('admin.admin.sites');
             }
         }
 

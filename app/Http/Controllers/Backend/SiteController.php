@@ -28,16 +28,16 @@ use Illuminate\Support\Facades\Cache;
 use DateTimeZone;
 use Illuminate\Http\Request;
 use GuzzleHttp\Psr7\Request as GuzzleRequest;
-use Auth,DB,Validator;
+use Auth, DB, Validator;
 
 class SiteController extends Controller
 {
     public function index(): Renderable
     {
         $this->checkAuthorization(auth()->user(), ['site.view']);
-        
+
         $user = Auth::guard('admin')->user();
-        
+
         if ($user->hasRole('superadmin')) {
             return view('backend.pages.sites.index', [
                 'sites' => Site::all(),
@@ -47,7 +47,7 @@ class SiteController extends Controller
                 'sites' => Site::where('email', $user->email)->get(),
             ]);
         }
-    }    
+    }
 
     public function create(): Renderable
     {
@@ -74,15 +74,16 @@ class SiteController extends Controller
     public function store(SiteRequest $request): RedirectResponse
     {
         $this->checkAuthorization(auth()->user(), ['site.create']);
-    
+
         $site = new Site();
         $site->site_name = $request->site_name;
         $site->slug = $this->generateUniqueSlug($request->site_name);
         $site->email = $request->email;
         $site->device_id = $request->device_id;
+        $site->alternate_device_id = $request->alternate_device_id;
         $site->clusterID = $request->clusterID;
         $site->increase_running_hours_status = $request->has('increase_running_hours_status') ? 1 : 0;
-    
+
         $additionalData = [
             'site_name' => $request->input('site_name'),
             'asset_name' => $request->input('asset_name'),
@@ -122,41 +123,51 @@ class SiteController extends Controller
                 'add' => $request->input('stop_add'),
                 'argument' => $request->input('stop_arg'),
             ],
-             'auto_md' => [
+            'auto_md' => [
                 'md' => $request->input('auto_md'),
                 'add' => $request->input('auto_add'),
                 'argument' => $request->input('auto_arg'),
             ],
-             'manual_md' => [
+            'manual_md' => [
                 'md' => $request->input('manual_md'),
                 'add' => $request->input('manual_add'),
                 'argument' => $request->input('manual_arg1'),
             ],
-             'mode_md' => [
+            'mode_md' => [
                 'md' => $request->input('mode_md'),
                 'add' => $request->input('mode_add'),
-                
+
             ],
             'parameters' => [
                 'coolant_temperature' => [
                     'md' => $request->input('coolant_temperature_md'),
                     'add' => $request->input('coolant_temperature_add'),
+                    'low' => $request->input('coolant_temperature_low'),
+                    'high' => $request->input('coolant_temperature_high')
                 ],
                 'oil_temperature' => [
                     'md' => $request->input('oil_temperature_md'),
                     'add' => $request->input('oil_temperature_add'),
+                    'low' => $request->input('oil_temperature_low'),
+                    'high' => $request->input('oil_temperature_high')
                 ],
                 'oil_pressure' => [
                     'md' => $request->input('oil_pressure_md'),
                     'add' => $request->input('oil_pressure_add'),
+                    'low' => $request->input('oil_pressure_low'),
+                    'high' => $request->input('oil_pressure_high')
                 ],
                 'rpm' => [
                     'md' => $request->input('rpm_md'),
                     'add' => $request->input('rpm_add'),
+                    'low' => $request->input('rpm_low'),
+                    'high' => $request->input('rpm_high')
                 ],
                 'number_of_starts' => [
                     'md' => $request->input('number_of_starts_md'),
                     'add' => $request->input('number_of_starts_add'),
+                    'low' => $request->input('number_of_starts_low'),
+                    'high' => $request->input('number_of_starts_high')
                 ],
                 'battery_voltage' => [
                     'md' => $request->input('battery_voltage_md'),
@@ -174,6 +185,10 @@ class SiteController extends Controller
                 'admin_run_hours' => $request->input('admin_run_hours'),
                 'increase_minutes' => $request->input('increase_minutes'),
             ],
+            'readOn' => [
+                    'md' => $request->input('readOn_md'),
+                    'add' => $request->input('readOn_add'),
+                ],
             'electric_parameters' => [
                 'voltage_l_l' => [
                     'a' => [
@@ -235,7 +250,7 @@ class SiteController extends Controller
                     'md' =>  $request->input('fuel_level_md_status'),
                     'add' => $request->input('fuel_level_add_status'),
                 ],
-                'emergency_stop_status'=> [
+                'emergency_stop_status' => [
                     'md' =>  $request->input('emergency_stop_md_status'),
                     'add' => $request->input('emergency_stop_add_status'),
                 ],
@@ -285,14 +300,14 @@ class SiteController extends Controller
                 ]
             ],
         ];
-    
+
         // dd($additionalData);
         $site->data = json_encode($additionalData);
         $site->save();
-    
+
         session()->flash('success', __('Site has been created.'));
         return redirect()->route('admin.sites.index');
-    }      
+    }
 
 
     public function edit(int $id): Renderable
@@ -302,9 +317,10 @@ class SiteController extends Controller
         $site = Site::findOrFail($id);
         $siteData = json_decode($site->data, true);
         $user_emails = Admin::select('email', 'username')->where('username', '!=', 'superadmin')->get();
+    
         return view('backend.pages.sites.edit', [
             'site' => $site,
-            'siteData' => $siteData, 
+            'siteData' => $siteData,
             'roles' => Role::all(),
             'user_emails' => $user_emails,
         ]);
@@ -313,12 +329,13 @@ class SiteController extends Controller
     public function update(SiteRequest $request, int $id): RedirectResponse
     {
         $this->checkAuthorization(auth()->user(), ['site.update']);
-    
+
         $site = Site::findOrFail($id);
         $site->site_name = $request->site_name;
         $site->slug = $this->generateUniqueSlug($request->site_name);
         $site->email = $request->email;
         $site->device_id = $request->device_id;
+        $site->alternate_device_id = $request->alternate_device_id;
         $site->clusterID = $request->clusterID;
         $site->increase_running_hours_status = $request->input('increase_running_hours_status', 0);
 
@@ -361,12 +378,12 @@ class SiteController extends Controller
                 'add' => $request->input('stop_add'),
                 'argument' => $request->input('stop_arg'),
             ],
-             'auto_md' => [
+            'auto_md' => [
                 'md' => $request->input('auto_md'),
                 'add' => $request->input('auto_add'),
                 'argument' => $request->input('auto_arg'),
             ],
-             'manual_md' => [
+            'manual_md' => [
                 'md' => $request->input('manual_md'),
                 'add' => $request->input('manual_add'),
                 'argument' => $request->input('manual_arg1'),
@@ -374,28 +391,38 @@ class SiteController extends Controller
             'mode_md' => [
                 'md' => $request->input('mode_md'),
                 'add' => $request->input('mode_add'),
-                
+
             ],
             'parameters' => [
                 'coolant_temperature' => [
                     'md' => $request->input('coolant_temperature_md'),
                     'add' => $request->input('coolant_temperature_add'),
+                    'low' => $request->input('coolant_temperature_low'),
+                    'high' => $request->input('coolant_temperature_high')
                 ],
                 'oil_temperature' => [
                     'md' => $request->input('oil_temperature_md'),
                     'add' => $request->input('oil_temperature_add'),
+                    'low' => $request->input('oil_temperature_low'),
+                    'high' => $request->input('oil_temperature_high')
                 ],
                 'oil_pressure' => [
                     'md' => $request->input('oil_pressure_md'),
                     'add' => $request->input('oil_pressure_add'),
+                    'low' => $request->input('oil_pressure_low'),
+                    'high' => $request->input('oil_pressure_high')
                 ],
                 'rpm' => [
                     'md' => $request->input('rpm_md'),
                     'add' => $request->input('rpm_add'),
+                    'low' => $request->input('rpm_low'),
+                    'high' => $request->input('rpm_high')
                 ],
                 'number_of_starts' => [
                     'md' => $request->input('number_of_starts_md'),
                     'add' => $request->input('number_of_starts_add'),
+                    'low' => $request->input('number_of_starts_low'),
+                    'high' => $request->input('number_of_starts_high')
                 ],
                 'battery_voltage' => [
                     'md' => $request->input('battery_voltage_md'),
@@ -413,6 +440,10 @@ class SiteController extends Controller
                 'admin_run_hours' => $request->input('admin_run_hours'),
                 'increase_minutes' => $request->input('increase_minutes'),
             ],
+            'readOn' => [
+                    'md' => $request->input('readOn_md'),
+                    'add' => $request->input('readOn_add'),
+                ],
             'electric_parameters' => [
                 'voltage_l_l' => [
                     'a' => [
@@ -474,7 +505,7 @@ class SiteController extends Controller
                     'md' =>  $request->input('fuel_level_md_status'),
                     'add' => $request->input('fuel_level_add_status'),
                 ],
-                'emergency_stop_status'=> [
+                'emergency_stop_status' => [
                     'md' =>  $request->input('emergency_stop_md_status'),
                     'add' => $request->input('emergency_stop_add_status'),
                 ],
@@ -521,18 +552,18 @@ class SiteController extends Controller
                 'generator_low_voltage_status' => [
                     'md' => $request->input('generator_low_voltage_md_status'),
                     'add' => $request->input('generator_low_voltage_add_status'),
-                ]            
+                ]
             ],
         ];
-    
+
         // dd($additionalData);
         $site->data = json_encode($additionalData);
         $site->save();
-    
+
         session()->flash('success', __('Site has been Updated.'));
         return redirect()->route('admin.sites.index');
     }
-                                                                        
+
     public function destroy(int $id): RedirectResponse
     {
         $this->checkAuthorization(auth()->user(), ['site.delete']);
@@ -549,17 +580,17 @@ class SiteController extends Controller
         if (!$siteData) {
             return redirect()->back()->withErrors('Site not found or module_id is missing.');
         }
-    
+
         $data = json_decode($siteData->data, true);
         $mdValues = $this->extractMdFields($data);
-    
+
         $mongoUri = 'mongodb://isaqaadmin:password@44.240.110.54:27017/isa_qa';
         $client = new MongoClient($mongoUri);
         $database = $client->isa_qa;
         $collection = $database->device_events;
-    
+
         $events = [];
-    
+
         if (!empty($mdValues)) {
             $uniqueMdValues = array_unique((array) $mdValues);
             $uniqueMdValues = array_filter($uniqueMdValues, function ($value) {
@@ -567,7 +598,7 @@ class SiteController extends Controller
             });
             $uniqueMdValues = array_map('intval', $uniqueMdValues);
             $uniqueMdValues = array_values($uniqueMdValues);
-    
+
             foreach ($uniqueMdValues as $moduleId) {
                 $event = $collection->findOne(
                     ['module_id' => $moduleId],
@@ -578,11 +609,11 @@ class SiteController extends Controller
                 }
             }
         }
-    
+
         if (empty($events)) {
             return redirect()->back()->withErrors('No data found for the specified module_id values.');
         }
-    
+
         // usort($events, function ($a, $b) {
         //     $createdAtA = new UTCDateTime($a['created_at_timestamp']);
         //     $createdAtB = new UTCDateTime($b['created_at_timestamp']);
@@ -593,27 +624,27 @@ class SiteController extends Controller
             $createdAtB = new UTCDateTime((int) round($b['created_at_timestamp'] * 1000));
             return $createdAtB <=> $createdAtA;
         });
-        
+
         $latestCreatedAt = $events[0]['createdAt'];
-        
+
         $latestCreatedAtFormatted = $latestCreatedAt->toDateTime()->setTimezone(new DateTimeZone('Asia/Kolkata'))->format('d-m-Y H:i:s');
-        
+
         foreach ($events as &$event) {
             $event['createdAt'] = $event['createdAt']->toDateTime()->setTimezone(new DateTimeZone('Asia/Kolkata'))->format('d-m-Y H:i:s');
-            
+
             $event['latestCreatedAt'] = $latestCreatedAtFormatted;
         }
-        
+
         header('Content-Type: application/json');
-        
+
         $eventsData = json_encode($events, JSON_PRETTY_PRINT);
-        
+
         $sitejsonData = json_decode($siteData['data']);
-        
+
         $user = Auth::guard('admin')->user();
-       
+
         $role = $request->query('role');
-    
+
         if ($role == 'superadmin') {
             return view('backend.pages.sites.superadmin-site-details', [
                 'siteData' => $siteData,
@@ -632,26 +663,26 @@ class SiteController extends Controller
                 'latestCreatedAt' => $latestCreatedAtFormatted,
             ]);
         }
-        
+
         if ($user->hasRole('superadmin')) {
-            
+
             return view(
                 'backend.pages.sites.superadmin-site-details',
                 [
-                'siteData' => $siteData,
-                'sitejsonData' => $sitejsonData,
-                'eventData' => $events,
-                'latestCreatedAt' => $latestCreatedAtFormatted,
+                    'siteData' => $siteData,
+                    'sitejsonData' => $sitejsonData,
+                    'eventData' => $events,
+                    'latestCreatedAt' => $latestCreatedAtFormatted,
                 ]
-                );
-            } else {
+            );
+        } else {
             return view(
-            'backend.pages.sites.site-details',
+                'backend.pages.sites.site-details',
                 [
-                'siteData' => $siteData,
-                'sitejsonData' => $sitejsonData,
-                'eventData' => $events,
-                'latestCreatedAt' => $latestCreatedAtFormatted,
+                    'siteData' => $siteData,
+                    'sitejsonData' => $sitejsonData,
+                    'eventData' => $events,
+                    'latestCreatedAt' => $latestCreatedAtFormatted,
                 ]
             );
         }
@@ -683,7 +714,7 @@ class SiteController extends Controller
     //         if (!empty($location) && $location !== 'Select Location') {
     //             $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(data, '$.group')) = ?", [$location]);
     //         }
-            
+
     //         $siteData = $query->get();
 
     //         $decodedSiteData = $siteData->map(function ($site) {
@@ -791,12 +822,12 @@ class SiteController extends Controller
     //         //         });
     //         //     }
     //         // }
-            
+
     //         // $eventData = MongodbFrontend::get()->pluck('data');
     //         $eventData = MongodbFrontend::pluck('data')->toArray();
 
     //         // return $eventData;
-            
+
     //         usort($eventData, fn($a, $b) => ($b['created_at_timestamp'] ?? 0) <=> ($a['created_at_timestamp'] ?? 0));
 
     //         // $latestCreatedAt = !empty($eventData)
@@ -814,7 +845,7 @@ class SiteController extends Controller
     //         } else {
     //             $latestCreatedAt = 'N/A';
     //         }
-            
+
     //         foreach ($eventData as &$event) {
     //             $event['createdAt'] = $event['createdAt']->toDateTime()
     //                 ->setTimezone(new \DateTimeZone('Asia/Kolkata'))
@@ -849,13 +880,13 @@ class SiteController extends Controller
 
     //         $sitejsonData = json_decode($siteData->first()->data ?? '{}', true);
     //         // return $eventData;
-       
+
     //         return view('backend.pages.sites.admin-sites', compact('siteData', 'sitejsonData', 'eventData', 'latestCreatedAt'));
     //     }
 
     // }
 
-    public function AdminSites(Request $request)     
+    public function AdminSites(Request $request)
     {
         $role = $request->query('role');
         $bankName = $request->query('bank_name');
@@ -881,7 +912,7 @@ class SiteController extends Controller
             if (!empty($location) && $location !== 'Select Location') {
                 $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(data, '$.group')) = ?", [$location]);
             }
-            
+
             $siteData = $query->get();
 
             $decodedSiteData = $siteData->map(function ($site) {
@@ -961,27 +992,27 @@ class SiteController extends Controller
             $eventData = MongodbFrontend::pluck('data')->toArray();
 
             // return $eventData;
-            
+
             usort($eventData, fn($a, $b) => ($b['created_at_timestamp'] ?? 0) <=> ($a['created_at_timestamp'] ?? 0));
 
             if (!empty($eventData)) {
                 $timestamp = (int) ($eventData[0]['createdAt']['$date']['$numberLong'] ?? 0);
                 $latestCreatedAt = $timestamp
                     ? (new \DateTime('@' . ($timestamp / 1000)))
-                        ->setTimezone(new \DateTimeZone('Asia/Kolkata'))
-                        ->format('d-m-Y H:i:s')
+                    ->setTimezone(new \DateTimeZone('Asia/Kolkata'))
+                    ->format('d-m-Y H:i:s')
                     : 'N/A';
             } else {
                 $latestCreatedAt = 'N/A';
             }
-            
+
             foreach ($eventData as &$event) {
                 $timestamp = (int) ($event['createdAt']['$date']['$numberLong'] ?? 0);
 
                 $event['createdAt'] = $timestamp
                     ? (new \DateTime('@' . ($timestamp / 1000)))
-                        ->setTimezone(new \DateTimeZone('Asia/Kolkata'))
-                        ->format('d-m-Y H:i:s')
+                    ->setTimezone(new \DateTimeZone('Asia/Kolkata'))
+                    ->format('d-m-Y H:i:s')
                     : 'N/A';
 
                 $event['latestCreatedAt'] = $latestCreatedAt;
@@ -1019,10 +1050,9 @@ class SiteController extends Controller
 
             $sitejsonData = json_decode($siteData->first()->data ?? '{}', true);
             // return $eventData;
-       
+
             return view('backend.pages.sites.admin-sites', compact('siteData', 'sitejsonData', 'eventData', 'latestCreatedAt'));
         }
-
     }
 
     public function fetchStatuses(Request $request)
@@ -1080,18 +1110,18 @@ class SiteController extends Controller
     public function fetchLatestData($slug)
     {
         $siteData = Site::where('slug', $slug)->first();
-        
+
         if (!$siteData) {
             return response()->json(['error' => 'Site not found or module_id is missing.'], 404);
         }
-    
+
         $data = json_decode($siteData->data, true);
         $mdValues = $this->extractMdFields($data);
         $mongoUri = 'mongodb://isaqaadmin:password@44.240.110.54:27017/isa_qa';
         $client = new MongoClient($mongoUri);
         $database = $client->isa_qa;
         $collection = $database->device_events;
-    
+
         $events = [];
         if (!empty($mdValues)) {
             $uniqueMdValues = array_unique((array) $mdValues);
@@ -1100,7 +1130,7 @@ class SiteController extends Controller
             });
             $uniqueMdValues = array_map('intval', $uniqueMdValues);
             $uniqueMdValues = array_values($uniqueMdValues);
-        
+
             foreach ($uniqueMdValues as $moduleId) {
                 $event = $collection->findOne(
                     ['module_id' => $moduleId],
@@ -1111,11 +1141,11 @@ class SiteController extends Controller
                 }
             }
         }
-    
+
         $eventsData = json_encode($events, JSON_PRETTY_PRINT);
-       
+
         return response()->json(['eventData' => $events]);
-    }    
+    }
 
     private function extractMdFields($data)
     {
@@ -1153,8 +1183,8 @@ class SiteController extends Controller
 
     public function apiStoreDevice(Request $request)
     {
-        $emails = is_array($request->userEmail) 
-            ? $request->userEmail 
+        $emails = is_array($request->userEmail)
+            ? $request->userEmail
             : explode(',', $request->userEmail);
 
         $validator = Validator::make($request->all(), [
@@ -1207,8 +1237,8 @@ class SiteController extends Controller
             'upperLimit'     => $request->upperLimit,
             'lowerLimitMsg'  => $request->lowerLimitMsg,
             'upperLimitMsg'  => $request->upperLimitMsg,
-            'userEmail'      => is_array($request->userEmail) 
-                ? implode(',', $request->userEmail) 
+            'userEmail'      => is_array($request->userEmail)
+                ? implode(',', $request->userEmail)
                 : $request->userEmail,
             'userPassword'   => Hash::make($request->userPassword),
             'owner_email'    => $request->owner_email,
@@ -1224,12 +1254,12 @@ class SiteController extends Controller
     public function apiFetchDevice(Request $request)
     {
         $data = DB::table('device_events')->get();
-         return view('backend.pages.notification.dg-list', ['data' => $data]);
+        return view('backend.pages.notification.dg-list', ['data' => $data]);
     }
 
     public function NotificationCreate(Request $request)
     {
-         $data = DB::table('device_events')->get();
+        $data = DB::table('device_events')->get();
         return view('backend.pages.notification.create-site', ['data' => $data]);
     }
 
@@ -1237,7 +1267,7 @@ class SiteController extends Controller
     {
         return view('backend.pages.notification.edit-site');
     }
-    
+
     public function apiUpdateDevice(Request $request)
     {
         $device = DeviceEvent::find($request->id);
@@ -1302,4 +1332,3 @@ class SiteController extends Controller
         }
     }
 }
-

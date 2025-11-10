@@ -12,13 +12,22 @@
     <link rel="stylesheet" href="{{url('backend/assets/css/site-details.css')}}">
 </head>
 
+<style>
+    .status-box {
+  background: #f9f9f9;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+}
+
+</style>
 
 <body>
     <div class="header-container">
         <a class="navbar-brand" href="#">
-            <img src="https://genset.innovatorautomation.co.in/assets/logo.svg" alt="sochiot_Logo" class="logo-img" />
+            <img src="https://sochiot.com/wp-content/uploads/2022/04/sochiotlogo-re-e1688377669450.png" alt="sochiot_Logo" class="logo-img" />
         </a>
-        <h5 class="header-title">DG SET MONITORING SYSTEM</h5>
+        <h5 class="header-title"> Energy Monitoring System</h5>
     </div>
 
     <div class="container-fluid">
@@ -33,7 +42,7 @@
                         <tbody>
                             <tr>
                                 <th class="asset">
-                                    Asset Name: {{ $sitejsonData->asset_name }}
+                                    Custom Name : {{ $sitejsonData->asset_name }}
                                 </th>
                                 <td data-label="site_name">
                                     <strong>Site_Name:</strong> {{ $sitejsonData->site_name }}
@@ -42,19 +51,20 @@
                                     <strong>Location:</strong> {{ $sitejsonData->group }}
                                 </td>
                                 <td data-label="Generator">
-                                    <strong>Bank_Name:</strong> {{ $sitejsonData->generator }}
+                                    <strong>Meter Name:</strong> {{ $sitejsonData->generator }}
                                 </td>
                                 <td data-label="S/N">
-                                    <strong>S/N:</strong> {{ $sitejsonData->serial_number }}
+                                    <strong>Meter Number</st||rong> {{ $sitejsonData->serial_number }}
                                 </td>
                                 <td data-label="Model">
-                                    <strong>Controller-type:</strong> {{ $sitejsonData->asset_name }}
+                                    <strong>Controller:</strong> {{ $sitejsonData->asset_name }}
                                 </td>
                                 <td data-label="Brand">
-                                    <strong>Brand:</strong> {{ $sitejsonData->brand }}
+                                    <strong>Grid:</strong> {{ $sitejsonData->brand }}
                                 </td>
                                 <td data-label="Capacity">
                                     <strong>Capacity:</strong> {{ $sitejsonData->capacity }}
+                                    <strong>DG:</strong> {{ $sitejsonData->capacity }}
                                 </td>
                             </tr>
 
@@ -122,206 +132,153 @@
                                 ?>
 
                                 <td colspan="7">
-                                    <div class="run-status-final">
-                                        <!-- Left Column - Start/Stop -->
-                                        <div class="control-column d-flex align-items-center gap-2">
-                                            <form id="start-form" class="m-0 p-0">
-                                                <!-- Hidden Inputs -->
-                                                <input type="hidden" name="argValue" value="1">
-                                                @if(isset($sitejsonData->start_md->md))
-                                                <input type="hidden" name="moduleId"
-                                                    value="{{ $sitejsonData->start_md->md }}">
-                                                @endif
 
-                                                @if(isset($sitejsonData->start_md->add))
-                                                <input type="hidden" name="cmdField"
-                                                    value="{{ $sitejsonData->start_md->add }}">
-                                                @endif
+<!-- sanjay -->
+<table style="width:100%; text-align:center; border-collapse:separate; border-spacing:10px;">
+    <tr>
+        <!-- Supply / RPM -->
+        <td style="width:16%;">
+            @php
+                $param = $siteData['parameters']['rpm'] ?? null;
+                $value = isset($param['md']) ? floatval($param['md']) : null;
+                $low = isset($param['low']) ? floatval($param['low']) : null;
+                $high = isset($param['high']) ? floatval($param['high']) : null;
 
-                                                @if(isset($sitejsonData->start_md->argument))
-                                                <input type="hidden" name="cmdArg"
-                                                    value="{{ $sitejsonData->start_md->argument }}">
-                                                @endif
-
-                                                <!-- START Button -->
-                                                <button type="button" class="control-btn start-btn btn btn-success">
-                                                    <i class="fas fa-play"></i> START
-                                                </button>
-                                            </form>
-
-                                            <!-- STOP Button -->
-                                            <form id="stop-form" class="m-0 p-0">
-                                                <!-- Hidden Inputs -->
-                                                <input type="hidden" name="argValue" value="1">
-                                                @if(isset($sitejsonData->stop_md->md))
-                                                <input type="hidden" name="moduleId"
-                                                    value="{{ $sitejsonData->stop_md->md }}">
-                                                @endif
-
-                                                @if(isset($sitejsonData->stop_md->add))
-                                                <input type="hidden" name="cmdField"
-                                                    value="{{ $sitejsonData->stop_md->add }}">
-                                                @endif
-
-                                                @if(isset($sitejsonData->stop_md->argument))
-                                                <input type="hidden" name="cmdArg"
-                                                    value="{{ $sitejsonData->stop_md->argument }}">
-                                                @endif
-
-                                                <!-- STOP Button -->
-                                                <button type="button" class="control-btn stop-btn btn btn-danger">
-                                                    <i class="fas fa-stop"></i> STOP
-                                                </button>
-                                            </form>
-                                        </div>
-
-                                        <!-- Center Column - Status Indicators -->
-                                        <div class="status-column">
-                                            <div class="status-box">
-                                                <i class="fas fa-cogs" style="color: teal; font-size: 24px;"></i>
-                                                <p class="fw-bold">Run Status</p>
-                                                @if($addValuerunstatus > 0)
-                                                <span class="badge bg-success px-2 py-1">Running</span>
-                                                @else
-                                                <span class="badge bg-danger px-2 py-1">Stop</span>
-                                                @endif
-                                            </div>
-
-                                            <div class="control-column">
-                                                <form id="auto-form" class="m-0 p-0">
-                                                    <!-- Hidden Inputs -->
-                                                    <input type="hidden" name="argValue" value="1">
-
-                                                    @if(isset($sitejsonData->auto_md->md))
-                                                    <input type="hidden" name="moduleId"
-                                                        value="{{ $sitejsonData->auto_md->md }}">
-                                                    @endif
-
-                                                    @if(isset($sitejsonData->auto_md->add))
-                                                    <input type="hidden" name="cmdField"
-                                                        value="{{ $sitejsonData->auto_md->add }}">
-                                                    @endif
-
-                                                    @if(isset($sitejsonData->auto_md->argument))
-                                                    <input type="hidden" name="cmdArg"
-                                                        value="{{ $sitejsonData->auto_md->argument }}">
-                                                    @endif
-
-                                                    <!-- AUTO Button -->
-                                                    <button class="control-btn auto-btn active">
-                                                        <i class="fas fa-robot"></i> AUTO
-                                                    </button>
-                                                </form>
-
-                                                <form id="manual-form" class="m-0 p-0">
-                                                    <!-- Hidden Inputs -->
-                                                    <input type="hidden" name="argValue" value="1">
-
-                                                    @if(isset($sitejsonData->manual_md->md))
-                                                    <input type="hidden" name="moduleId"
-                                                        value="{{ $sitejsonData->manual_md->md }}">
-                                                    @endif
-
-                                                    @if(isset($sitejsonData->manual_md->add))
-                                                    <input type="hidden" name="cmdField"
-                                                        value="{{ $sitejsonData->manual_md->add }}">
-                                                    @endif
-
-                                                    @if(isset($sitejsonData->manual_md->argument))
-                                                    <input type="hidden" name="cmdArg"
-                                                        value="{{ $sitejsonData->manual_md->argument }}">
-                                                    @endif
-
-                                                    <!-- MANUAL Button -->
-                                                    <button class="control-btn manual-btn">
-                                                        <i class="fas fa-hand-paper"></i> MANUAL
-                                                    </button>
-                                                </form>
-
-                                            </div>
-
-        <?php
-    $keyaa = $sitejsonData->mode_md->add ?? null;
-    $addValueModestatus = null;
-
-    foreach ($eventData as $event) {
-        $eventArraya = $event->getArrayCopy();
-        if (
-            isset($eventArraya['module_id']) &&
-            $eventArraya['module_id'] == ($sitejsonData->mode_md->md ?? null)
-        ) {
-            if ($keyaa && array_key_exists($keyaa, $eventArraya)) {
-                $value = $eventArraya[$keyaa];
-                if (is_numeric($value)) {
-                    $addValueModestatus = (float) $value;
+                if (!is_null($value) && !is_null($low) && !is_null($high)) {
+                    $status = ($value >= $low && $value <= $high) ? 'normal' : 'abnormal';
+                    $bgColor = $status === 'normal' ? 'green' : 'red';
+                } else {
+                    $status = 'abnormal';
+                    $bgColor = 'red';
                 }
-            }
-            break;
-        }
-    }
-?>
-<div class="mode-display-box">
-    <div class="mode-label">CURRENT MODE</div>
-    @if($addValueModestatus === 1.0)
-        <div class="mode-value" id="current-mode">MANUAL</div>
-    @elseif($addValueModestatus === 0.0)
-        <div class="mode-value" id="current-mode">AUTO</div>
-    @else
-        <div class="mode-value" id="current-mode">-</div>
-    @endif
-</div>
+            @endphp
+            <div class="status-box" style="padding:10px; font-size:14px;">
+                <p><strong>Grid_Balance</strong></p>
+                <span class="status-box">waiting ...</span>
+               
+            </div>
+        </td>
+
+        <!-- Avg. Voltage / battery_voltage -->
+        <td style="width:16%;">
+            @php
+                $param = $siteData['parameters']['battery_voltage'] ?? null;
+                $value = isset($param['md']) ? floatval($param['md']) : null;
+                $low   = isset($param['low']) ? floatval($param['low']) : null;
+                $high  = isset($param['high']) ? floatval($param['high']) : null;
+
+                if (!is_null($value) && !is_null($low) && !is_null($high)) {
+                    $status = ($value >= $low && $value <= $high) ? 'normal' : 'abnormal';
+                    $bgColor = $status === 'normal' ? 'green' : 'red';
+                } else {
+                    $status = 'abnormal';
+                    $bgColor = 'red';
+                }
+            @endphp
+            <div class="status-box" style="padding:10px; font-size:14px;">
+                <p><strong>Grid_Unit</strong></p>
+                <span class="status-box">waiting ...</span>
+            </div>
+        </td>
+
+        <!-- Current L1 / oil_pressure -->
+        <td style="width:16%;">
+            @php
+                $param = $siteData['parameters']['oil_pressure'] ?? null;
+                $value = isset($param['md']) ? floatval($param['md']) : null;
+                $low = isset($param['low']) ? floatval($param['low']) : null;
+                $high = isset($param['high']) ? floatval($param['high']) : null;
+
+                if (!is_null($value) && !is_null($low) && !is_null($high)) {
+                    $status = ($value >= $low && $value <= $high) ? 'normal' : 'abnormal';
+                    $bgColor = $status === 'normal' ? 'green' : 'red';
+                } else {
+                    $status = 'abnormal';
+                    $bgColor = 'red';
+                }
+            @endphp
+            <div class="status-box" style="padding:10px; font-size:14px;">
+                <p><strong>DG_Unit</strong></p>
+                <span class="status-box">waiting ...</span>
+            </div>
+        </td>
+
+        <!-- Current L2 / oil_temperature -->
+        <td style="width:16%;">
+            @php
+                $param = $siteData['parameters']['oil_temperature'] ?? null;
+                $value = isset($param['md']) ? floatval($param['md']) : null;
+                $low = isset($param['low']) ? floatval($param['low']) : null;
+                $high = isset($param['high']) ? floatval($param['high']) : null;
+
+                if (!is_null($value) && !is_null($low) && !is_null($high)) {
+                    $status = ($value >= $low && $value <= $high) ? 'normal' : 'abnormal';
+                    $bgColor = $status === 'normal' ? 'green' : 'red';
+                } else {
+                    $status = 'abnormal';
+                    $bgColor = 'red';
+                }
+            @endphp
+            <div class="status-box" style="padding:10px; font-size:14px;">
+                <p><strong>Connection_Status</strong></p>
+                <span class="status-box">waiting ...</span>
+            </div>
+        </td>
+
+        <!-- Current L3 / number_of_starts -->
+        <td style="width:16%;">
+            @php
+                $param = $siteData['parameters']['number_of_starts'] ?? null;
+                $value = isset($param['md']) ? floatval($param['md']) : null;
+                $low = isset($param['low']) ? floatval($param['low']) : null;
+                $high = isset($param['high']) ? floatval($param['high']) : null;
+
+                if (!is_null($value) && !is_null($low) && !is_null($high)) {
+                    $status = ($value >= $low && $value <= $high) ? 'normal' : 'abnormal';
+                    $bgColor = $status === 'normal' ? 'green' : 'red';
+                } else {
+                    $status = 'abnormal';
+                    $bgColor = 'red';
+                }
+            @endphp
+            <div class="status-box" style="padding:10px; font-size:14px;">
+                <p><strong>Supply_Status</strong></p>
+                <span class="status-box">waiting ...</span>
+            </div>
+        </td>
+
+        <!-- Updated At -->
+        <td style="width:20%;">
+            <div class="status-box" style="padding:10px; font-size:14px;">
+                <i class="fas fa-clock text-info" style="font-size:18px;"></i>
+                <p><strong>Updated At:</strong></p>
+                <h6 class="text-muted">{{ $latestCreatedAt }}</h6>
+            </div>
+        </td>
+    </tr>
+</table>
 
 
 
-                                            <div class="status-box">
-                                                <i class="fas fa-running text-primary" style="font-size: 24px;"></i>
-                                                <p><strong>Running Hours:</strong></p>
-                                                <h5 class="text-dark">{{ $hours }} hrs {{ $minutes }} mins</h5>
-                                            </div>
-                                            <div class="status-box">
-                                                <i class="fas fa-clock text-info" style="font-size: 24px;"></i>
-                                                <p><strong>Updated At:</strong></p>
-                                                <h5 class="text-muted">{{ $latestCreatedAt }}</h5>
-                                            </div>
-                                        </div>
-                                    </div>
+
+
+
                                 </td>
+                                   
 
 
-                                <!-- <td colspan="7">
-                                    <div class="run-status-container">
-                                        <div class="status-box">
-                                            <i class="fas fa-cogs" style="color: teal; font-size: 24px;"></i>
-                                            <p class="fw-bold">Run Status</p>
-                                            @if($addValuerunstatus > 0)
-                                            <span class="badge bg-success px-2 py-1">Running</span>
-                                            @else
-                                            <span class="badge bg-danger px-2 py-1">Stop</span>
-                                            @endif
-                                        </div>
-                                        <div class="status-box">
-                                            <i class="fas fa-running text-primary" style="font-size: 24px;"></i>
-                                            <p><strong>Running Hours:</strong></p>
-                                            <h5 class="text-dark">{{ $hours }} hrs {{ $minutes }} mins</h5>
-                                        </div>
-                                        <div class="status-box">
-                                            <i class="fas fa-clock text-info" style="font-size: 24px;"></i>
-                                            <p><strong>Updated At:</strong></p>
-                                            <h5 class="text-muted">{{ $latestCreatedAt }}</h5>
-                                        </div>
-                                    </div>
-                                </td> -->
+                                
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Second Table for Engine Parameters -->
+            <!-- Second Table for Electrical Parameters -->
             <div class="col-md-12 mt-4">
                 <div class="card">
                     <div class="card-header text-center text-white fw-bold fs-5 p-3" style="background:#002E6E;">
-                        ENGINE PARAMETERS
+                        Electrical Parameters
                     </div>
                     <div class=" card-body p-0">
                         <div class="table-responsive">
@@ -330,8 +287,7 @@
                                     <tr>
                                         <td>
                                             <div class="parameter-box">
-                                                <i class="fas fa-thermometer-half parameter-icon text-primary"></i>
-                                                <span class="parameter-label">Coolant Temp</span>
+                                                <span class="parameter-label">Avg Voltage</span>
                                                 <?php
                                                     $key = $sitejsonData->parameters->coolant_temperature->add;
                                                     $addValue = '_';
@@ -350,8 +306,7 @@
                                         </td>
                                         <td>
                                             <div class="parameter-box">
-                                                <i class="fas fa-oil-can parameter-icon text-warning"></i>
-                                                <span class="parameter-label">Oil Temp</span>
+                                                <span class="parameter-label">Avg kVA</span>
                                                 <?php
                                                     $key = $sitejsonData->parameters->oil_temperature->add;
                                                     $addValue = '_';
@@ -370,8 +325,7 @@
                                         </td>
                                         <td>
                                             <div class="parameter-box">
-                                                <i class="fas fa-gas-pump parameter-icon text-danger"></i>
-                                                <span class="parameter-label">Oil Pressure</span>
+                                                <span class="parameter-label">Avg Current</span>
                                                 <?php
                                                     $key = $sitejsonData->parameters->oil_pressure->add;
                                                     $addValue = '_';
@@ -390,8 +344,7 @@
                                         </td>
                                         <td>
                                             <div class="parameter-box">
-                                                <i class="fas fa-tachometer-alt parameter-icon text-danger"></i>
-                                                <span class="parameter-label">RPM</span>
+                                                <span class="parameter-label">Frequency</span>
                                                 <?php
                                                     $key = $sitejsonData->parameters->rpm->add;
                                                     $addValue = '_';
@@ -410,15 +363,14 @@
                                         </td>
                                         <td>
                                             <div class="parameter-box">
-                                                <i class="fas fa-tint parameter-icon text-info"></i>
-                                                <span class="parameter-label">DEF</span>
+                                                <span class="parameter-label">Avg kVAR</span>
                                                 <span class="parameter-value">-</span>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="parameter-box">
-                                                <i class="fas fa-battery-half parameter-icon text-info"></i>
-                                                <span class="parameter-label">Battery Voltage</span>
+                                                
+                                                <span class="parameter-label">KWH</span>
                                                 <?php
                                                     $key = $sitejsonData->parameters->battery_voltage->add;
                                                     $addValue = '_';
@@ -439,7 +391,6 @@
                                     <tr>
                                         <td colspan="3">
                                             <div class="parameter-box">
-                                                <i class="fas fa-bolt parameter-icon text-warning"></i>
                                                 <span class="parameter-label">Voltage (L-L)</span>
                                                 <div class="phase-values">
                                                     <?php
@@ -559,141 +510,33 @@
                                                 <table class="table table-bordered table-striped table-hover">
                                                     <tbody>
                                                         <tr>
-                                                            <th class="asset">
-                                                                Asset Name: {{ $sitejsonData->asset_name }}
-                                                            </th>
-                                                            <td data-label="site_name">
-                                                                <strong>Site_Name:</strong> {{ $sitejsonData->site_name }}
-                                                            </td>
-                                                            <td data-label="Group">
-                                                                <strong>Location:</strong> {{ $sitejsonData->group }}
-                                                            </td>
-                                                            <td data-label="Generator">
-                                                                <strong>Bank_Name :</strong> {{ $sitejsonData->generator }}
-                                                            </td>
-                                                            <td data-label="S/N">
-                                                                <strong>S/N:</strong> {{ $sitejsonData->serial_number }}
-                                                            </td>
-                                                            <td data-label="Model">
-                                                            <strong>Controller-type:</strong> {{ $sitejsonData->asset_name }}
-                                                            </td>
-                                                            <td data-label="Brand">
-                                                                <strong>Brand:</strong> {{ $sitejsonData->brand }}
-                                                            </td>
-                                                            <td data-label="Capacity">
-                                                                <strong>Capacity:</strong> {{ $sitejsonData->capacity }}
-                                                            </td>
-                                                        </tr>
+                                <th class="asset">
+                                    Custom Name: {{ $sitejsonData->asset_name }}
+                                </th>
+                                <td data-label="site_name">
+                                    <strong>Site_Name:</strong> {{ $sitejsonData->site_name }}
+                                </td>
+                                <td data-label="Group">
+                                    <strong>Location:</strong> {{ $sitejsonData->group }}
+                                </td>
+                                <td data-label="Generator">
+                                    <strong>Meter Name:</strong> {{ $sitejsonData->generator }}
+                                </td>
+                                <td data-label="S/N">
+                                    <strong>Meter Number</strong> {{ $sitejsonData->serial_number }}
+                                </td>
+                                <td data-label="Model">
+                                    <strong>Controller:</strong> {{ $sitejsonData->asset_name }}
+                                </td>
+                                <td data-label="Brand">
+                                    <strong>Grid:</strong> {{ $sitejsonData->brand }}
+                                </td>
+                                <td data-label="Capacity">
+                                    <strong>DG:</strong> {{ $sitejsonData->capacity }}
+                                </td>
+                            </tr>
                                                         <tr>
                                                         <td colspan="7">
-                                                            <div class="run-status-final">
-                                                                <!-- Left Column - Start/Stop -->
-                                                               <div class="control-column d-flex align-items-center gap-2">
-                                                                    <form id="start-form" class="m-0 p-0">
-                                                                        <!-- Hidden Inputs -->
-                                                                        <input type="hidden" name="argValue" value="1">
-                                                                        @if(isset($sitejsonData->start_md->md))
-                                                                        <input type="hidden" name="moduleId"
-                                                                            value="{{ $sitejsonData->start_md->md }}">
-                                                                        @endif
-
-                                                                        @if(isset($sitejsonData->start_md->add))
-                                                                        <input type="hidden" name="cmdField"
-                                                                            value="{{ $sitejsonData->start_md->add }}">
-                                                                        @endif
-
-                                                                        @if(isset($sitejsonData->start_md->argument))
-                                                                        <input type="hidden" name="cmdArg"
-                                                                            value="{{ $sitejsonData->start_md->argument }}">
-                                                                        @endif
-
-                                                                        <!-- START Button -->
-                                                                        <button type="button" class="control-btn start-btn btn btn-success">
-                                                                            <i class="fas fa-play"></i> START
-                                                                        </button>
-                                                                    </form>
-
-                                                                    <!-- STOP Button -->
-                                                                    <form id="stop-form" class="m-0 p-0">
-                                                                        <!-- Hidden Inputs -->
-                                                                        <input type="hidden" name="argValue" value="1">
-                                                                        @if(isset($sitejsonData->stop_md->md))
-                                                                        <input type="hidden" name="moduleId"
-                                                                            value="{{ $sitejsonData->stop_md->md }}">
-                                                                        @endif
-
-                                                                        @if(isset($sitejsonData->stop_md->add))
-                                                                        <input type="hidden" name="cmdField"
-                                                                            value="{{ $sitejsonData->stop_md->add }}">
-                                                                        @endif
-
-                                                                        @if(isset($sitejsonData->stop_md->argument))
-                                                                        <input type="hidden" name="cmdArg"
-                                                                            value="{{ $sitejsonData->stop_md->argument }}">
-                                                                        @endif
-
-                                                                        <!-- STOP Button -->
-                                                                        <button type="button" class="control-btn stop-btn btn btn-danger">
-                                                                            <i class="fas fa-stop"></i> STOP
-                                                                        </button>
-                                                                    </form>
-                                                                </div>
-
-                                                                <!-- Center Column - Status Indicators -->
-                                                                <div class="status-column">
-                                                                    <div class="status-box">
-                                                                        <i class="fas fa-cogs" style="color: teal; font-size: 24px;"></i>
-                                                                        <p class="fw-bold">Run Status</p>
-                                                                        @if($addValuerunstatus > 0)
-                                                                        <span class="badge bg-success px-2 py-1">Running</span>
-                                                                        @else
-                                                                        <span class="badge bg-danger px-2 py-1">Stop</span>
-                                                                        @endif
-                                                                    </div>
-                                        
-                                                                    <div class="control-column">
-                                                                        <form id="auto-form" class="m-0 p-0">
-                                                                            <!-- Hidden Inputs -->
-                                                                            <input type="hidden" name="argValue" value="1">
-
-                                                                            @if(isset($sitejsonData->auto_md->md))
-                                                                                <input type="hidden" name="moduleId" value="{{ $sitejsonData->auto_md->md }}">
-                                                                            @endif
-
-                                                                            @if(isset($sitejsonData->auto_md->add))
-                                                                                <input type="hidden" name="cmdField" value="{{ $sitejsonData->auto_md->add }}">
-                                                                            @endif
-
-                                                                            @if(isset($sitejsonData->auto_md->argument))
-                                                                                <input type="hidden" name="cmdArg" value="{{ $sitejsonData->auto_md->argument }}">
-                                                                            @endif
-
-                                                                            <!-- AUTO Button -->
-                                                                            <button class="control-btn auto-btn active">
-                                                                                <i class="fas fa-robot"></i> AUTO
-                                                                            </button>
-                                                                        </form>
-
-                                                                        <form id="manual-form" class="m-0 p-0">
-                                                                            <!-- Hidden Inputs -->
-                                                                            <input type="hidden" name="argValue" value="1">
-                                                                            @if(isset($sitejsonData->manual_md->md))
-                                                                                <input type="hidden" name="moduleId" value="{{ $sitejsonData->manual_md->md }}">
-                                                                            @endif
-
-                                                                            @if(isset($sitejsonData->manual_md->add))
-                                                                                <input type="hidden" name="cmdField" value="{{ $sitejsonData->manual_md->add }}">
-                                                                            @endif
-
-                                                                            @if(isset($sitejsonData->manual_md->argument))
-                                                                                <input type="hidden" name="cmdArg" value="{{ $sitejsonData->manual_md->argument }}">
-                                                                            @endif
-
-                                                                            <!-- MANUAL Button -->
-                                                                            <button class="control-btn manual-btn">
-                                                                                <i class="fas fa-hand-paper"></i> MANUAL
-                                                                            </button>
-                                                                        </form>
                                                                     </div>
                                                                     
       <?php
@@ -716,31 +559,135 @@
         }
     }
 ?>
-<div class="mode-display-box">
-    <div class="mode-label">CURRENT MODE</div>
-    @if($addValueModestatus === 1.0)
-        <div class="mode-value" id="current-mode">MANUAL</div>
-    @elseif($addValueModestatus === 0.0)
-        <div class="mode-value" id="current-mode">AUTO</div>
-    @else
-        <div class="mode-value" id="current-mode">-</div>
-    @endif
-</div>
+ 
+
+<table style="width:100%; text-align:center; border-collapse:separate; border-spacing:10px;">
+    <tr>
+        <!-- Supply / RPM -->
+        <td style="width:16%;">
+            @php
+                $param = $siteData['parameters']['rpm'] ?? null;
+                $value = isset($param['md']) ? floatval($param['md']) : null;
+                $low = isset($param['low']) ? floatval($param['low']) : null;
+                $high = isset($param['high']) ? floatval($param['high']) : null;
+
+                if (!is_null($value) && !is_null($low) && !is_null($high)) {
+                    $status = ($value >= $low && $value <= $high) ? 'normal' : 'abnormal';
+                    $bgColor = $status === 'normal' ? 'green' : 'red';
+                } else {
+                    $status = 'abnormal';
+                    $bgColor = 'red';
+                }
+            @endphp
+            <div class="status-box" style="padding:10px; font-size:14px;">
+                <p><strong>Grid_Balance</strong></p>
+                <span class="status-box">waiting ...</span>
+            </div>
+        </td>
+
+        <!-- Avg. Voltage / battery_voltage -->
+        <td style="width:16%;">
+            @php
+                $param = $siteData['parameters']['battery_voltage'] ?? null;
+                $value = isset($param['md']) ? floatval($param['md']) : null;
+                $low = isset($param['low']) ? floatval($param['low']) : null;
+                $high = isset($param['high']) ? floatval($param['high']) : null;
+
+                if (!is_null($value) && !is_null($low) && !is_null($high)) {
+                    $status = ($value >= $low && $value <= $high) ? 'normal' : 'abnormal';
+                    $bgColor = $status === 'normal' ? 'green' : 'red';
+                } else {
+                    $status = 'abnormal';
+                    $bgColor = 'red';
+                }
+            @endphp
+            <div class="status-box" style="padding:10px; font-size:14px;">
+                <p><strong>Grid_Unit</strong></p>
+                <span class="status-box">waiting ...</span>
+            </div>
+        </td>
+
+        <!-- Current L1 / oil_pressure -->
+        <td style="width:16%;">
+            @php
+                $param = $siteData['parameters']['oil_pressure'] ?? null;
+                $value = isset($param['md']) ? floatval($param['md']) : null;
+                $low = isset($param['low']) ? floatval($param['low']) : null;
+                $high = isset($param['high']) ? floatval($param['high']) : null;
+
+                if (!is_null($value) && !is_null($low) && !is_null($high)) {
+                    $status = ($value >= $low && $value <= $high) ? 'normal' : 'abnormal';
+                    $bgColor = $status === 'normal' ? 'green' : 'red';
+                } else {
+                    $status = 'abnormal';
+                    $bgColor = 'red';
+                }
+            @endphp
+            <div class="status-box" style="padding:10px; font-size:14px;">
+                <p><strong>DG_Unit</strong></p>
+                <span class="status-box">waiting ...</span>
+            </div>
+        </td>
+
+        <!-- Current L2 / oil_temperature -->
+        <td style="width:16%;">
+            @php
+                $param = $siteData['parameters']['oil_temperature'] ?? null;
+                $value = isset($param['md']) ? floatval($param['md']) : null;
+                $low = isset($param['low']) ? floatval($param['low']) : null;
+                $high = isset($param['high']) ? floatval($param['high']) : null;
+
+                if (!is_null($value) && !is_null($low) && !is_null($high)) {
+                    $status = ($value >= $low && $value <= $high) ? 'normal' : 'abnormal';
+                    $bgColor = $status === 'normal' ? 'green' : 'red';
+                } else {
+                    $status = 'abnormal';
+                    $bgColor = 'red';
+                }
+            @endphp
+            <div class="status-box" style="padding:10px; font-size:14px;">
+                <p><strong>Connection_Status</strong></p>
+                <span class="status-box">waiting ...</span>
+            </div>
+        </td>
+
+        <!-- Current L3 / number_of_starts -->
+        <td style="width:16%;">
+            @php
+                $param = $siteData['parameters']['number_of_starts'] ?? null;
+                $value = isset($param['md']) ? floatval($param['md']) : null;
+                $low = isset($param['low']) ? floatval($param['low']) : null;
+                $high = isset($param['high']) ? floatval($param['high']) : null;
+
+                if (!is_null($value) && !is_null($low) && !is_null($high)) {
+                    $status = ($value >= $low && $value <= $high) ? 'normal' : 'abnormal';
+                    $bgColor = $status === 'normal' ? 'green' : 'red';
+                } else {
+                    $status = 'abnormal';
+                    $bgColor = 'red';
+                }
+            @endphp
+            <div class="status-box" style="padding:10px; font-size:14px;">
+                <p><strong>Supply_Status</strong></p>
+                <span class="status-box">waiting ...</span>
+            </div>
+        </td>
+
+        <!-- Updated At -->
+        <td style="width:20%;">
+            <div class="status-box" style="padding:10px; font-size:14px;">
+                <i class="fas fa-clock text-info" style="font-size:18px;"></i>
+                <p><strong>Updated At:</strong></p>
+                <h6 class="text-muted">{{ $latestCreatedAt }}</h6>
+            </div>
+        </td>
+    </tr>
+</table>
 
 
-                                                                    
-                                                                    <div class="status-box">
-                                                                            <i class="fas fa-running text-primary" style="font-size: 24px;"></i>
-                                                                            <p><strong>Running Hours:</strong></p>
-                                                                            <h5 class="text-dark">{{ $hours }} hrs {{ $minutes }} mins</h5>
-                                                                        </div>
-                                                                        <div class="status-box">
-                                                                            <i class="fas fa-clock text-info" style="font-size: 24px;"></i>
-                                                                            <p><strong>Updated At:</strong></p>
-                                                                            <h5 class="text-muted">{{ $latestCreatedAt }}</h5>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
+
+
+
                                                             </td>
                                                             
                                                         </tr>
@@ -749,11 +696,11 @@
                                             </div>
                                         </div>
 
-                                        <!-- Second Table for Engine Parameters -->
+                                        <!-- Second Table for Electrical Parameters -->
                                         <div class="col-md-12 mt-4">
                                             <div class="card">
                                                 <div class="card-header text-center text-white fw-bold fs-5 p-3" style="background:#002E6E;">
-                                                    ENGINE PARAMETERS
+                                                    Electrical Parameters
                                                 </div>
                                                 <div class="card-body p-0">
                                                     <div class="table-responsive">
@@ -762,8 +709,7 @@
                                                                 <tr>
                                                                     <td>
                                                                         <div class="parameter-box">
-                                                    <i class="fas fa-thermometer-half parameter-icon text-primary"></i>
-                                                    <span class="parameter-label">Coolant Temp</span>
+                                                    <span class="parameter-label">Avg Voltage</span>
                                                     <?php
                                                         $key = $sitejsonData->parameters->coolant_temperature->add;
                                                         $addValue = '_';
@@ -782,8 +728,7 @@
                                                                     </td>
                                                                     <td>
                                                                         <div class="parameter-box">
-                                                    <i class="fas fa-oil-can parameter-icon text-warning"></i>
-                                                    <span class="parameter-label">Oil Temp</span>
+                                                    <span class="parameter-label">Avg kVA</span>
                                                     <?php
                                                         $key = $sitejsonData->parameters->oil_temperature->add;
                                                         $addValue = '_';
@@ -802,8 +747,7 @@
                                                                     </td>
                                                                     <td>
                                                                     <div class="parameter-box">
-                                                    <i class="fas fa-gas-pump parameter-icon text-danger"></i>
-                                                    <span class="parameter-label">Oil Pressure</span>
+                                                    <span class="parameter-label">Avg Current</span>
                                                     <?php
                                                         $key = $sitejsonData->parameters->oil_pressure->add;
                                                         $addValue = '_';
@@ -822,8 +766,7 @@
                                                                     </td>
                                                                     <td>
                                                                     <div class="parameter-box">
-                                                    <i class="fas fa-tachometer-alt parameter-icon text-danger"></i>
-                                                    <span class="parameter-label">RPM</span>
+                                                    <span class="parameter-label">Frequency</span>
                                                     <?php
                                                         $key = $sitejsonData->parameters->rpm->add;
                                                         $addValue = '_';
@@ -842,15 +785,13 @@
                                                                     </td>
                                                                     <td>
                                                                         <div class="parameter-box">
-                                                                            <i class="fas fa-tint parameter-icon text-info"></i>
-                                                                            <span class="parameter-label">DEF</span>
+                                                                            <span class="parameter-label">Avg kVAR</span>
                                                                             <span class="parameter-value">-</span>
                                                                         </div>
                                                                     </td>
                                                                     <td>
                                                                     <div class="parameter-box">
-                                                    <i class="fas fa-battery-half parameter-icon text-info"></i>
-                                                    <span class="parameter-label">Battery Voltage</span>
+                                                    <span class="parameter-label">KWH</span>
                                                     <?php
                                                         $key = $sitejsonData->parameters->battery_voltage->add;
                                                         $addValue = '_';
@@ -871,7 +812,6 @@
                                                                 <tr>
                                                                 <td colspan="3">
                                                 <div class="parameter-box">
-                                                    <i class="fas fa-bolt parameter-icon text-warning"></i>
                                                     <span class="parameter-label">Voltage (L-L)</span>
                                                     <div class="phase-values">
                                                         <?php
@@ -1150,97 +1090,117 @@
     });
 </script> -->
 
-<script>
-    $(document).on('click', '.start-btn, .stop-btn, .auto-btn, .manual-btn', function(e) {
-        e.preventDefault();
+ <script>
+    $(document).on('click', '.start-btn, .stop-btn, .auto-btn, .manual-btn, .reading-on-btn, .reading-off-btn',
+        function(e) {
+            e.preventDefault();
 
-        let form = $(this).closest('form');
-        let actionType = '';
+            let form = $(this).closest('form');
+            let actionType = '';
 
-        if ($(this).hasClass('start-btn')) {
-            actionType = 'start';
-        } else if ($(this).hasClass('stop-btn')) {
-            actionType = 'stop';
-        } else if ($(this).hasClass('auto-btn')) {
-            actionType = 'auto';
-        } else if ($(this).hasClass('manual-btn')) {
-            actionType = 'manual';
-        }
+            if ($(this).hasClass('start-btn')) {
+                actionType = 'start';
+            } else if ($(this).hasClass('stop-btn')) {
+                actionType = 'stop';
+            } else if ($(this).hasClass('auto-btn')) {
+                actionType = 'auto';
+            } else if ($(this).hasClass('manual-btn')) {
+                actionType = 'manual';
+            } else if ($(this).hasClass('reading-on-btn')) {
+                actionType = 'reading_on';
+            } else if ($(this).hasClass('reading-off-btn')) {
+                actionType = 'reading_off';
+            }
 
-        let argValue = form.find('input[name="argValue"]').val();
-        let moduleId = form.find('input[name="moduleId"]').val();
-        let cmdField = form.find('input[name="cmdField"]').val();
-        let cmdArg = form.find('input[name="cmdArg"]').val();
+            let argValue = form.find('input[name="argValue"]').val();
+            let moduleId = form.find('input[name="moduleId"]').val();
+            let cmdField = form.find('input[name="cmdField"]').val();
+            let cmdArg = form.find('input[name="cmdArg"]').val();
 
-        if (!argValue || !moduleId || !cmdField || !cmdArg) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Service Not Active',
-                text: 'Service is not active for this site, kindly contact the team!',
-                confirmButtonText: 'OK'
-            });
-            return;
-        }
+            console.log(moduleId);
 
-        const ajaxCall = () => {
-            $.ajax({
-                url: '/admin/start-process',
-                method: 'POST',
-                data: {
-                    argValue,
-                    moduleId,
-                    cmdField,
-                    cmdArg,
-                    actionType,
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: `${actionType.charAt(0).toUpperCase() + actionType.slice(1)}ed!`,
-                        text: response.message
-                    });
+            if (!argValue || !moduleId || !cmdField || !cmdArg) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Service Not Active',
+                    text: 'Service is not active for this site, kindly contact the team!',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
 
-                    console.log('External Response:', response.external_response);
+            const ajaxCall = () => {
+                $.ajax({
+                    url: '/admin/start-process',
+                    method: 'POST',
+                    data: {
+                        argValue,
+                        moduleId,
+                        cmdField,
+                        cmdArg,
+                        actionType,
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: `${actionType.charAt(0).toUpperCase() + actionType.slice(1)}!`,
+                            text: response.message
+                        });
 
-                    // ✅ Backend confirmed mode change — only update UI now
-                    if (actionType === 'auto' || actionType === 'manual') {
-                        if (response.mode_status === 0) {
-                            $('#current-mode').text('AUTO');
-                        } else if (response.mode_status === 1) {
-                            $('#current-mode').text('MANUAL');
+                        console.log('External Response:', response.external_response);
+
+                        // ✅ Backend confirmed mode change — only update UI now
+                        if (actionType === 'auto' || actionType === 'manual') {
+                            if (response.mode_status === 0) {
+                                $('#current-mode').text('AUTO');
+                            } else if (response.mode_status === 1) {
+                                $('#current-mode').text('MANUAL');
+                            }
                         }
-                    }
-                },
-                error: function(xhr) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Something went wrong. Please try again.'
-                    });
-                    console.error(xhr.responseText);
-                }
-            });
-        };
 
-        if (actionType === 'start') {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: `Are you sure you want to START this genset?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, Start',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    ajaxCall();
-                }
-            });
-        } else {
-            ajaxCall();
-        }
-    });
-</script>
+                        // Update reading status if applicable
+                        if (actionType === 'reading_on' || actionType === 'reading_off') {
+                            // Update reading status display based on your logic
+                            // This is a placeholder - replace with your actual logic
+                            if (actionType === 'reading_on') {
+                                $('#reading-status').html(
+                                    '<span class="status-increasing">Increasing</span>');
+                            } else {
+                                $('#reading-status').html(
+                                    '<span class="status-normal">Normal</span>');
+                            }
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Something went wrong. Please try again.'
+                        });
+                        console.error(xhr.responseText);
+                    }
+                });
+            };
+
+            if (actionType === 'start') {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: `Are you sure you want to START this genset?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, Start',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        ajaxCall();
+                    }
+                });
+            } else {
+                ajaxCall();
+            }
+        });
+    </script>
 
 </body>
 

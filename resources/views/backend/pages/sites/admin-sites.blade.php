@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="{{url('backend/assets/css/admin-all-min.css')}}">
     <link rel="stylesheet" href="{{url('backend/assets/css/admin-bootstrap-min.css')}}">
     <link rel="stylesheet" href="{{url('/css/admin-sites.css')}}" class="rel">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
     <script src="{{url('backend/assets/js/admin-bootstrap.bundle.js')}}"></script>
     <script src="{{url('backend/assets/js/adminCDN.js')}}"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
@@ -73,13 +75,13 @@
         <div class="container-fluid">
             <!-- Logo on the left -->
             <a class="navbar-brand" href="#">
-                <img src="https://genset.innovatorautomation.co.in/assets/logo.svg" alt="Logo" width="120" height="40"
+                <img src="https://sochiot.com/wp-content/uploads/2022/04/sochiotlogo-re-e1688377669450.png" alt="Logo" width="120" height="40"
                     class="logo-white">
             </a>
 
             <!-- Centered title -->
             <div class="navbar-brand mx-auto">
-                <span class="d-none d-md-inline">DG SET MONITORING SYSTEM</span>
+                <span class="d-none d-md-inline">Energy Monitoring System</span>
                 <span class="d-md-none">DGMS</span>
             </div>
 
@@ -178,19 +180,20 @@
             <div class="table-responsive" id="siteTable">
                 <table class="table table-bordered table-striped table-hover">
                     <thead class="table-primary">
-                        <tr>
+                     <tr>
                             <th>S.No</th>
                             <th>Site Name</th>
-                            <th>DG Status</th>
-                            <th>Fuel Level</th>
+                            <th>Supply Status</th>
+                            <th>Connection Status </th>
                             <!-- <th>Controller Type</th> -->
-                            <th>Bank Name</th>
+                            <th>Client Name</th>
                             <th>Location</th>
-                            <th>Id</th>
-                            <th>Total Run Hours</th>
-                            <th>Updated Date</th>
+                            <th>Meter Number</th>
+                            <th>KWH</th>
+                            <th>Balance Grid</th>
                             <th>RMS Status</th>
-                            <th>DG Controller</th>
+                            <th>Meter Status</th>
+                            <th>Setting</th>
                         </tr>
                     </thead>
 
@@ -252,10 +255,10 @@
                                 $statusClass = '';
 
                                 if (is_numeric($runValue) && $runValue > 0) {
-                                $statusText = 'ON';
+                                $statusText = 'AVAILABLE';
                                 $statusClass = 'text-success blinking';
                                 } else {
-                                $statusText = 'OFF';
+                                $statusText = 'FAIL';
                                 $statusClass = 'text-danger';
                                 }
                                 @endphp
@@ -265,40 +268,44 @@
                                         class="controller-status-text {{ $statusClass }}"><strong>{{ $statusText }}</strong></span>
                                 </td>
 
-                                <td class="status-cell">
-                                    @php
-                                    $capacity = $sitejsonData['capacity'] ?? 0;
-                                    $fuelMd = $sitejsonData['parameters']['fuel']['md'] ?? null;
-                                    $fuelKey = $sitejsonData['parameters']['fuel']['add'] ?? null;
-                                    $addValue = 0;
+<td class="status-cell">
+    @php
+        $capacity = isset($sitejsonData['capacity']) ? floatval($sitejsonData['capacity']) : 0;
+        $fuelMd = $sitejsonData['parameters']['fuel']['md'] ?? null;
+        $fuelKey = $sitejsonData['parameters']['fuel']['add'] ?? null;
+        $addValue = 0;
 
-                                    foreach ($eventData as $event) {
-                                    $eventArray = $event instanceof \ArrayObject ? $event->getArrayCopy() : (array)
-                                    $event;
-                                    if ($fuelMd && isset($eventArray['module_id']) && $eventArray['module_id'] ==
-                                    $fuelMd) {
-                                    if ($fuelKey && array_key_exists($fuelKey, $eventArray)) {
-                                    $addValue = $eventArray[$fuelKey];
-                                    }
-                                    break;
-                                    }
-                                    }
+        foreach ($eventData as $event) {
+            $eventArray = $event instanceof \ArrayObject ? $event->getArrayCopy() : (array) $event;
 
-                                    $percentage = is_numeric($addValue) ? floatval($addValue) : 0;
-                                    $percentageDecimal = $percentage / 100;
-                                    $totalFuelLiters = $capacity * $percentageDecimal;
-                                    $fuelClass = $percentage <= 20 ? 'low-fuel' : 'normal-fuel' ;
-                                        $lowFuelText=$percentage <=20 ? 'Low Fuel' : '' ; @endphp <div
-                                        class="fuel-container">
-                                        <div class="fuel-indicator {{ $fuelClass }}">
-                                            <div class="fuel-level" style="width: {{ $percentage }}%;"></div>
-                                            <span class="fuel-percentage">{{ $percentage }}%</span>
-                                        </div>
-                                        @if($lowFuelText)
-                                        <span class="fueldata">{{ $lowFuelText }}</span>
-                                        @endif
-            </div>
-            </td>
+            if ($fuelMd && isset($eventArray['module_id']) && $eventArray['module_id'] == $fuelMd) {
+                if ($fuelKey && array_key_exists($fuelKey, $eventArray)) {
+                    $addValue = $eventArray[$fuelKey];
+                }
+                break;
+            }
+        }
+
+        // Ensure numeric conversion
+        $percentage = is_numeric($addValue) ? floatval($addValue) : 0.0;
+        $percentageDecimal = $percentage / 100.0;
+        $totalFuelLiters = $capacity * $percentageDecimal;
+
+        $fuelClass = $percentage <= 20 ? 'low-fuel' : 'normal-fuel';
+        $lowFuelText = $percentage <= 20 ? 'Low Fuel' : '';
+    @endphp
+
+    <div class="fuel-container">
+        <div class="fuel-indicator {{ $fuelClass }}">
+            <div class="fuel-level" style="width: {{ $percentage }}%;"></div>
+            <span class="fuel-percentage">{{ number_format($percentage, 1) }}%</span>
+        </div>
+        @if($lowFuelText)
+            <span class="fueldata">{{ $lowFuelText }}</span>
+        @endif
+    </div>
+</td>
+
             <td>{{ $sitejsonData['generator'] ?? 'N/A' }}</td>
             <td>{{ $sitejsonData['group'] ?? 'N/A' }}</td>
             <td>{{ $sitejsonData['serial_number'] ?? 'N/A' }}</td>
@@ -350,6 +357,217 @@
             <td class="status-cell">
                 <div class="status-dot gateway-dot"></div>
             </td>
+
+<td class="setting-col text-center" style="cursor:pointer;">
+  <!-- Modal trigger ko alag span mein rakho -->
+  <span data-bs-toggle="modal" data-bs-target="#settingsModal1">
+    <i class="fa-solid fa-gear me-2 text-primary"></i> 
+    Recharge
+  </span>
+
+  <!-- Modal with normal backdrop -->
+  <div class="modal fade" id="settingsModal1" tabindex="-1" aria-labelledby="settingsModalLabel1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+      <div class="modal-content rounded-4 shadow-lg border-0 overflow-hidden">
+        
+        <!-- Modal Header -->
+        <div class="modal-header bg-gradient bg-primary text-white py-3">
+          <div class="d-flex align-items-center">
+            <i class="fa-solid fa-bolt me-2 fs-5"></i>
+            <h5 class="modal-title mb-0 fw-bold" id="settingsModalLabel1">Recharge & Load Settings</h5>
+          </div>
+          <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"></button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body p-4">
+          <form id="rechargeForm" class="px-2">
+            
+            <!-- Recharge Section -->
+            <div class="card border-0 bg-light mb-4">
+              <div class="card-header bg-transparent border-0 py-2">
+                <div class="d-flex align-items-center">
+                  <i class="fa-solid fa-wallet text-primary me-2"></i>
+                  <h6 class="mb-0 fw-bold text-primary">Recharge Details</h6>
+                </div>
+              </div>
+              <div class="card-body pt-0">
+                <div class="row mb-3 align-items-center">
+                  <label class="col-sm-5 col-form-label fw-medium">Recharge Amount:</label>
+                  <div class="col-sm-7">
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-primary text-white border-primary">
+                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                      </span>
+                      <input type="text" id="recharge_amount" class="form-control border-primary" placeholder="Enter amount">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mains Details -->
+            <div class="card border-0 bg-light mb-4">
+              <div class="card-header bg-transparent border-0 py-2">
+                <div class="d-flex align-items-center">
+                  <i class="fa-solid fa-plug text-success me-2"></i>
+                  <h6 class="mb-0 fw-bold text-success">Mains Details</h6>
+                </div>
+              </div>
+              <div class="card-body pt-0">
+                <div class="row mb-3 align-items-center">
+                  <label class="col-sm-5 col-form-label fw-medium">Fixed Charge:</label>
+                  <div class="col-sm-7">
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-success text-white border-success">
+                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                      </span>
+                      <input type="text" id="mains_fixed" class="form-control border-success" placeholder="Fixed Charge">
+                    </div>
+                  </div>
+                </div>
+                <div class="row mb-3 align-items-center">
+                  <label class="col-sm-5 col-form-label fw-medium">Unit Charge:</label>
+                  <div class="col-sm-7">
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-success text-white border-success">
+                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                      </span>
+                      <input type="text" id="mains_unit" class="form-control border-success" placeholder="Unit Charge">
+                    </div>
+                  </div>
+                </div>
+                <div class="row mb-2 align-items-center">
+                  <label class="col-sm-5 col-form-label fw-medium">Sanction Load:</label>
+                  <div class="col-sm-7">
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-success text-white border-success">
+                        <i class="fa-solid fa-bolt"></i>
+                      </span>
+                      <input type="text" id="mains_load" class="form-control border-success" placeholder="Sanction Load">
+                      <span class="input-group-text bg-success text-white border-success">kW</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DG Details -->
+            <div class="card border-0 bg-light mb-3">
+              <div class="card-header bg-transparent border-0 py-2">
+                <div class="d-flex align-items-center">
+                  <i class="fa-solid fa-gas-pump text-danger me-2"></i>
+                  <h6 class="mb-0 fw-bold text-danger">DG Details</h6>
+                </div>
+              </div>
+              <div class="card-body pt-0">
+                <div class="row mb-3 align-items-center">
+                  <label class="col-sm-5 col-form-label fw-medium">Fixed Charge:</label>
+                  <div class="col-sm-7">
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-danger text-white border-danger">
+                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                      </span>
+                      <input type="text" id="dg_fixed" class="form-control border-danger" placeholder="Fixed Charge">
+                    </div>
+                  </div>
+                </div>
+                <div class="row mb-3 align-items-center">
+                  <label class="col-sm-5 col-form-label fw-medium">Unit Charge:</label>
+                  <div class="col-sm-7">
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-danger text-white border-danger">
+                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                      </span>
+                      <input type="text" id="dg_unit" class="form-control border-danger" placeholder="Unit Charge">
+                    </div>
+                  </div>
+                </div>
+                <div class="row mb-2 align-items-center">
+                  <label class="col-sm-5 col-form-label fw-medium">Sanction Load:</label>
+                  <div class="col-sm-7">
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-danger text-white border-danger">
+                        <i class="fa-solid fa-bolt"></i>
+                      </span>
+                      <input type="text" id="dg_load" class="form-control border-danger" placeholder="Sanction Load">
+                      <span class="input-group-text bg-danger text-white border-danger">kW</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer bg-light py-3">
+          <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">
+            <i class="fa-solid fa-xmark me-1"></i> Cancel
+          </button>
+          <div>
+            <button type="button" id="disconnectBtn" class="btn btn-danger btn-sm px-3 me-2">
+              <i class="fa-solid fa-power-off me-1"></i> Disconnect
+            </button>
+            <button type="button" id="connectBtn" class="btn btn-success btn-sm px-3">
+              <i class="fa-solid fa-link me-1"></i> Connect
+            </button>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</td>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const storageKey = "recharge_settings";
+  const fields = [
+    "recharge_amount",
+    "mains_fixed", "mains_unit", "mains_load",
+    "dg_fixed", "dg_unit", "dg_load"
+  ];
+
+  // Load old data if exists
+  const saved = localStorage.getItem(storageKey);
+  if (saved) {
+    const data = JSON.parse(saved);
+    fields.forEach(f => {
+      if (data[f]) document.getElementById(f).value = data[f];
+    });
+  }
+
+  // ✅ Save data as JSON and then clear inputs
+  document.getElementById("connectBtn").addEventListener("click", function() {
+    const obj = {};
+    fields.forEach(f => obj[f] = document.getElementById(f).value.trim());
+
+    // Save to localStorage
+    localStorage.setItem(storageKey, JSON.stringify(obj, null, 2));
+    console.log("Saved JSON:", JSON.stringify(obj, null, 2));
+
+    // ✅ Clear all input fields after saving
+    fields.forEach(f => document.getElementById(f).value = "");
+
+    // Optional: success feedback
+    alert("Recharge settings saved successfully!");
+  });
+
+  // ✅ Clear all data on Disconnect
+  document.getElementById("disconnectBtn").addEventListener("click", function() {
+    localStorage.removeItem(storageKey);
+    fields.forEach(f => document.getElementById(f).value = "");
+    console.log("LocalStorage cleared for", storageKey);
+  });
+});
+</script>
+
+
+
+
             </tr>
             @php $i++; @endphp
             @endforeach

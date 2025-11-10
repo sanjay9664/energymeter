@@ -56,6 +56,7 @@ class DashboardController extends Controller
                 'sites.increase_running_hours_status', 
                 'admins.id as admin_id', 
                 'admins.name as admin_name'
+                
             )
             ->groupBy(
                 'sites.id', 

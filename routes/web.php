@@ -9,15 +9,14 @@ use App\Http\Controllers\Backend\Auth\LoginController;
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\RolesController;
 use App\Http\Controllers\Backend\SiteController;
-
+use App\Http\Controllers\Admin\RechargeSettingsController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
+| Here is where you can register web routes for your application.
+| These routes are loaded by the RouteServiceProvider within a group.
 |
 */
 
@@ -38,6 +37,7 @@ Route::get('/clear-cache', function () {
         'output' => Artisan::output(),
     ]);
 });
+
 Route::get('/send-daily-report', function () {
     Artisan::call('report:send-daily');
     return "Daily report command executed!";
@@ -47,12 +47,18 @@ Route::get('/send-daily-report', function () {
  * Admin routes
  */
 Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // ✅ Redirect /admin → /admin/admin-sites
+    Route::get('/', function () {
+        return redirect()->route('admin.sites');
+    })->name('dashboard');
+
     Route::post('/save-dashboard-data', [DashboardController::class, 'savedashboarddata'])->name('savedashboarddata');
     Route::resource('roles', RolesController::class);
     Route::resource('admins', AdminsController::class);
     Route::resource('sites', SiteController::class);
-    Route::get('/admin-sites', [SiteController::class, 'AdminSites'])->name('admin.sites');
+
+    Route::get('/admin-sites', [SiteController::class, 'AdminSites'])->name('sites');
     Route::get('/site-data/{slug}', [SiteController::class, 'fetchLatestData'])->name('site.fetchData');
 
     // For Mobile Application
@@ -76,8 +82,15 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
     // Fetch DG Status
     Route::post('/site/statuses', [SiteController::class, 'fetchStatuses'])->name('site.statuses');
 
-    //For Start,Stop,Manual
+    // For Start, Stop, Manual
     Route::post('/start-process', [SiteController::class, 'startProcess']);
 
     Route::delete('/delete-device-events/{deviceId}', [SiteController::class, 'apiDeleteDevice']);
+
+   
+
+Route::get('/admin/recharge-settings/{site_id?}', [RechargeSettingsController::class, 'index'])->name('admin.recharge-settings.index');
+Route::post('/admin/recharge-settings/save', [RechargeSettingsController::class, 'store'])->name('admin.recharge-settings.store');
+
+    
 })->middleware('auth:admin');

@@ -1,4 +1,3 @@
-
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -10,22 +9,20 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+    public function up(): void
     {
-        Schema::create('running_hours', function (Blueprint $table) {
-            $table->id();
-            $table->string('running_hours_admin');
-            $table->string('increase_running_hours');
-            $table->timestamps();
+        Schema::table('devices', function (Blueprint $table) {
+            //
         });
     }
-    
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('running_hours');
+        Schema::table('devices', function (Blueprint $table) {
+            //
+        });
     }
 };
