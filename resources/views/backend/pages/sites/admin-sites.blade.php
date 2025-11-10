@@ -185,7 +185,6 @@
                             <th>Site Name</th>
                             <th>Supply Status</th>
                             <th>Connection Status </th>
-                            <!-- <th>Controller Type</th> -->
                             <th>Client Name</th>
                             <th>Location</th>
                             <th>Meter Number</th>
@@ -235,553 +234,546 @@
                                     </a>
                                 </td>
 
-                                @php
-                                $runMd = $sitejsonData['run_status']['md'] ?? null;
-                                $runKey = $sitejsonData['run_status']['add'] ?? null;
-                                $runValue = 0;
+                                <?php
+                                    $readOn = isset($sitejsonData['parameters']) ? floatval($sitejsonData['parameters']) : 0;
+                                    $fuelMd = $sitejsonData['parameters']['number_of_starts']['md'] ?? null;
+                                    $fuelKey = $sitejsonData['parameters']['number_of_starts']['add'] ?? null;
+                                    $addValue = 0;
 
-                                foreach ($eventData as $event) {
-                                $eventArray = $event instanceof \ArrayObject ? $event->getArrayCopy() : (array) $event;
+                                    foreach ($eventData as $event) {
+                                        $eventArray = $event instanceof \ArrayObject ? $event->getArrayCopy() : (array) $event;
 
-                                if ($runMd && isset($eventArray['module_id']) && $eventArray['module_id'] == $runMd) {
-                                if ($runKey && array_key_exists($runKey, $eventArray)) {
-                                $runValue = $eventArray[$runKey];
-                                }
-                                break;
-                                }
-                                }
-
-                                $statusText = '';
-                                $statusClass = '';
-
-                                if (is_numeric($runValue) && $runValue > 0) {
-                                $statusText = 'AVAILABLE';
-                                $statusClass = 'text-success blinking';
-                                } else {
-                                $statusText = 'FAIL';
-                                $statusClass = 'text-danger';
-                                }
-                                @endphp
-
+                                        if ($fuelMd && isset($eventArray['module_id']) && $eventArray['module_id'] == $fuelMd) {
+                                            if ($fuelKey && array_key_exists($fuelKey, $eventArray)) {
+                                                $addsupplyValue = $eventArray[$fuelKey];
+                                            }
+                                            break;
+                                        }
+                                    }
+                                    // dd($addValue);
+                                ?>
                                 <td>
                                     <span
-                                        class="controller-status-text {{ $statusClass }}"><strong>{{ $statusText }}</strong></span>
+                                        class="controller-status-text {{ $addsupplyValue }}"><strong>{{ $addsupplyValue }}</strong></span>
                                 </td>
 
-<td class="status-cell">
-    @php
-        $capacity = isset($sitejsonData['capacity']) ? floatval($sitejsonData['capacity']) : 0;
-        $fuelMd = $sitejsonData['parameters']['fuel']['md'] ?? null;
-        $fuelKey = $sitejsonData['parameters']['fuel']['add'] ?? null;
-        $addValue = 0;
+                                <td class="status-cell">
+                                    <?php
+                                        $readOn = isset($sitejsonData['readOn']) ? floatval($sitejsonData['readOn']) : 0;
+                                        $fuelMd = $sitejsonData['readOn']['md'] ?? null;
+                                        $fuelKey = $sitejsonData['readOn']['add'] ?? null;
+                                        $addValue = 0;
 
-        foreach ($eventData as $event) {
-            $eventArray = $event instanceof \ArrayObject ? $event->getArrayCopy() : (array) $event;
+                                        foreach ($eventData as $event) {
+                                            $eventArray = $event instanceof \ArrayObject ? $event->getArrayCopy() : (array) $event;
 
-            if ($fuelMd && isset($eventArray['module_id']) && $eventArray['module_id'] == $fuelMd) {
-                if ($fuelKey && array_key_exists($fuelKey, $eventArray)) {
-                    $addValue = $eventArray[$fuelKey];
-                }
-                break;
-            }
-        }
+                                            if ($fuelMd && isset($eventArray['module_id']) && $eventArray['module_id'] == $fuelMd) {
+                                                if ($fuelKey && array_key_exists($fuelKey, $eventArray)) {
+                                                    $addValue = $eventArray[$fuelKey];
+                                                }
+                                                break;
+                                            }
+                                        }
+                                        // dd($addValue);
+                                    ?>
 
-        // Ensure numeric conversion
-        $percentage = is_numeric($addValue) ? floatval($addValue) : 0.0;
-        $percentageDecimal = $percentage / 100.0;
-        $totalFuelLiters = $capacity * $percentageDecimal;
+                                    <div class="fuel-container">
+                                        <div class="fuel-indicator ">
+                                            <div class="fuel-level"></div>
+                                            <span class="fuel-indicator">{{ $addValue }}</span>
+                                        </div>
+                                    </div>
+                                </td>
 
-        $fuelClass = $percentage <= 20 ? 'low-fuel' : 'normal-fuel';
-        $lowFuelText = $percentage <= 20 ? 'Low Fuel' : '';
-    @endphp
+                                <td>{{ $sitejsonData['generator'] ?? 'N/A' }}</td>
+                                <td>{{ $sitejsonData['group'] ?? 'N/A' }}</td>
+                                <td>{{ $sitejsonData['serial_number'] ?? 'N/A' }}</td>
 
-    <div class="fuel-container">
-        <div class="fuel-indicator {{ $fuelClass }}">
-            <div class="fuel-level" style="width: {{ $percentage }}%;"></div>
-            <span class="fuel-percentage">{{ number_format($percentage, 1) }}%</span>
-        </div>
-        @if($lowFuelText)
-            <span class="fueldata">{{ $lowFuelText }}</span>
-        @endif
-    </div>
-</td>
+                                <!-- <td>
+                                    @php
+                                    $increased_running_hours = DB::table('running_hours')
+                                        ->where('site_id', $site->id)
+                                        ->first();
 
-            <td>{{ $sitejsonData['generator'] ?? 'N/A' }}</td>
-            <td>{{ $sitejsonData['group'] ?? 'N/A' }}</td>
-            <td>{{ $sitejsonData['serial_number'] ?? 'N/A' }}</td>
+                                    $increaseRunningHours = (float) ($increased_running_hours->increase_running_hours ?? 0);
 
-            <td>
-                @php
-                $increased_running_hours = DB::table('running_hours')
-                    ->where('site_id', $site->id)
-                    ->first();
+                                    $addValue = 0;
+                                    $key = $sitejsonData['running_hours']['add'] ?? null;
+                                    $md = $sitejsonData['running_hours']['md'] ?? null;
 
-                $increaseRunningHours = (float) ($increased_running_hours->increase_running_hours ?? 0);
+                                    if ($key && $md) {
+                                        foreach ($eventData as $event) {
+                                            // $event is already an array
+                                            if (isset($event['module_id']) && $event['module_id'] == $md) {
+                                                if (array_key_exists($key, $event)) {
+                                                    $addValue = (float) $event[$key];
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
 
-                $addValue = 0;
-                $key = $sitejsonData['running_hours']['add'] ?? null;
-                $md = $sitejsonData['running_hours']['md'] ?? null;
+                                    $increaseMinutes = $sitejsonData['running_hours']['increase_minutes'] ?? 1;
+                                    $inc_addValue = $increaseMinutes > 0 ? $addValue / $increaseMinutes : $addValue;
 
-                if ($key && $md) {
-                    foreach ($eventData as $event) {
-                        // $event is already an array
-                        if (isset($event['module_id']) && $event['module_id'] == $md) {
-                            if (array_key_exists($key, $event)) {
-                                $addValue = (float) $event[$key];
-                            }
-                            break;
-                        }
-                    }
-                }
+                                    // Total running hours including DB value
+                                    $inc_addValueFormatted = $inc_addValue + $increaseRunningHours;
 
-                $increaseMinutes = $sitejsonData['running_hours']['increase_minutes'] ?? 1;
-                $inc_addValue = $increaseMinutes > 0 ? $addValue / $increaseMinutes : $addValue;
+                                    // Prevent negative value
+                                    if ($inc_addValueFormatted < 0) { $inc_addValueFormatted=0; } 
+                                    $totalMinutes=round($inc_addValueFormatted * 60);
+                                        $hours=floor($totalMinutes / 60); $minutes=$totalMinutes % 60; @endphp {{ $hours }} hrs
+                                        {{ $minutes }} mins </td> -->
 
-                // Total running hours including DB value
-                $inc_addValueFormatted = $inc_addValue + $increaseRunningHours;
+                                <?php
+                                    $readOn = isset($sitejsonData['total_kwh']) ? floatval($sitejsonData['total_kwh']) : 0;
+                                    $fuelMd = $sitejsonData['total_kwh']['md'] ?? null;
+                                    $fuelKey = $sitejsonData['total_kwh']['add'] ?? null;
+                                    $addValue = 0;
 
-                // Prevent negative value
-                if ($inc_addValueFormatted < 0) { $inc_addValueFormatted=0; } 
-                $totalMinutes=round($inc_addValueFormatted * 60);
-                    $hours=floor($totalMinutes / 60); $minutes=$totalMinutes % 60; @endphp {{ $hours }} hrs
-                    {{ $minutes }} mins </td>
+                                    foreach ($eventData as $event) {
+                                        $eventArray = $event instanceof \ArrayObject ? $event->getArrayCopy() : (array) $event;
+
+                                        if ($fuelMd && isset($eventArray['module_id']) && $eventArray['module_id'] == $fuelMd) {
+                                            if ($fuelKey && array_key_exists($fuelKey, $eventArray)) {
+                                                $addkwhValue = $eventArray[$fuelKey];
+                                            }
+                                            break;
+                                        }
+                                    }
+                                    // dd($addValue);
+                                ?>
+                                <td>{{ $addkwhValue }}</td>
+                                <td>{{ $formattedUpdatedAt }}</td>
 
 
-            <td>{{ $formattedUpdatedAt }}</td>
+                                <td class="status-cell">
+                                    <div class="status-dot controller-dot"></div>
+                                </td>
 
+                                <td class="status-cell">
+                                    <div class="status-dot gateway-dot"></div>
+                                </td>
 
-            <td class="status-cell">
-                <div class="status-dot controller-dot"></div>
-            </td>
+                                <td class="setting-col text-center" style="cursor:pointer;">
+                                  <!-- Modal trigger ko alag span mein rakho -->
+                                  <span data-bs-toggle="modal" data-bs-target="#settingsModal1">
+                                    <i class="fa-solid fa-gear me-2 text-primary"></i> 
+                                    Recharge
+                                  </span>
 
-            <td class="status-cell">
-                <div class="status-dot gateway-dot"></div>
-            </td>
+                                  <!-- Modal with normal backdrop -->
+                                  <div class="modal fade" id="settingsModal1" tabindex="-1" aria-labelledby="settingsModalLabel1" aria-hidden="true">
+                                    <div class="modal-dialog modal-md modal-dialog-centered">
+                                      <div class="modal-content rounded-4 shadow-lg border-0 overflow-hidden">
+                                        
+                                        <!-- Modal Header -->
+                                        <div class="modal-header bg-gradient bg-primary text-white py-3">
+                                          <div class="d-flex align-items-center">
+                                            <i class="fa-solid fa-bolt me-2 fs-5"></i>
+                                            <h5 class="modal-title mb-0 fw-bold" id="settingsModalLabel1">Recharge & Load Settings</h5>
+                                          </div>
+                                          <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"></button>
+                                        </div>
 
-<td class="setting-col text-center" style="cursor:pointer;">
-  <!-- Modal trigger ko alag span mein rakho -->
-  <span data-bs-toggle="modal" data-bs-target="#settingsModal1">
-    <i class="fa-solid fa-gear me-2 text-primary"></i> 
-    Recharge
-  </span>
+                                        <!-- Modal Body -->
+                                        <div class="modal-body p-4">
+                                          <form id="rechargeForm" class="px-2">
+                                            
+                                            <!-- Recharge Section -->
+                                            <div class="card border-0 bg-light mb-4">
+                                              <div class="card-header bg-transparent border-0 py-2">
+                                                <div class="d-flex align-items-center">
+                                                  <i class="fa-solid fa-wallet text-primary me-2"></i>
+                                                  <h6 class="mb-0 fw-bold text-primary">Recharge Details</h6>
+                                                </div>
+                                              </div>
+                                              <div class="card-body pt-0">
+                                                <div class="row mb-3 align-items-center">
+                                                  <label class="col-sm-5 col-form-label fw-medium">Recharge Amount:</label>
+                                                  <div class="col-sm-7">
+                                                    <div class="input-group input-group-sm">
+                                                      <span class="input-group-text bg-primary text-white border-primary">
+                                                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                                                      </span>
+                                                      <input type="text" id="recharge_amount" class="form-control border-primary" placeholder="Enter amount">
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
 
-  <!-- Modal with normal backdrop -->
-  <div class="modal fade" id="settingsModal1" tabindex="-1" aria-labelledby="settingsModalLabel1" aria-hidden="true">
-    <div class="modal-dialog modal-md modal-dialog-centered">
-      <div class="modal-content rounded-4 shadow-lg border-0 overflow-hidden">
-        
-        <!-- Modal Header -->
-        <div class="modal-header bg-gradient bg-primary text-white py-3">
-          <div class="d-flex align-items-center">
-            <i class="fa-solid fa-bolt me-2 fs-5"></i>
-            <h5 class="modal-title mb-0 fw-bold" id="settingsModalLabel1">Recharge & Load Settings</h5>
+                                            <!-- Mains Details -->
+                                            <div class="card border-0 bg-light mb-4">
+                                              <div class="card-header bg-transparent border-0 py-2">
+                                                <div class="d-flex align-items-center">
+                                                  <i class="fa-solid fa-plug text-success me-2"></i>
+                                                  <h6 class="mb-0 fw-bold text-success">Mains Details</h6>
+                                                </div>
+                                              </div>
+                                              <div class="card-body pt-0">
+                                                <div class="row mb-3 align-items-center">
+                                                  <label class="col-sm-5 col-form-label fw-medium">Fixed Charge:</label>
+                                                  <div class="col-sm-7">
+                                                    <div class="input-group input-group-sm">
+                                                      <span class="input-group-text bg-success text-white border-success">
+                                                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                                                      </span>
+                                                      <input type="text" id="mains_fixed" class="form-control border-success" placeholder="Fixed Charge">
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                                <div class="row mb-3 align-items-center">
+                                                  <label class="col-sm-5 col-form-label fw-medium">Unit Charge:</label>
+                                                  <div class="col-sm-7">
+                                                    <div class="input-group input-group-sm">
+                                                      <span class="input-group-text bg-success text-white border-success">
+                                                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                                                      </span>
+                                                      <input type="text" id="mains_unit" class="form-control border-success" placeholder="Unit Charge">
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                                <div class="row mb-2 align-items-center">
+                                                  <label class="col-sm-5 col-form-label fw-medium">Sanction Load:</label>
+                                                  <div class="col-sm-7">
+                                                    <div class="input-group input-group-sm">
+                                                      <span class="input-group-text bg-success text-white border-success">
+                                                        <i class="fa-solid fa-bolt"></i>
+                                                      </span>
+                                                      <input type="text" id="mains_load" class="form-control border-success" placeholder="Sanction Load">
+                                                      <span class="input-group-text bg-success text-white border-success">kW</span>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+
+                                            <!-- DG Details -->
+                                            <div class="card border-0 bg-light mb-3">
+                                              <div class="card-header bg-transparent border-0 py-2">
+                                                <div class="d-flex align-items-center">
+                                                  <i class="fa-solid fa-gas-pump text-danger me-2"></i>
+                                                  <h6 class="mb-0 fw-bold text-danger">DG Details</h6>
+                                                </div>
+                                              </div>
+                                              <div class="card-body pt-0">
+                                                <div class="row mb-3 align-items-center">
+                                                  <label class="col-sm-5 col-form-label fw-medium">Fixed Charge:</label>
+                                                  <div class="col-sm-7">
+                                                    <div class="input-group input-group-sm">
+                                                      <span class="input-group-text bg-danger text-white border-danger">
+                                                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                                                      </span>
+                                                      <input type="text" id="dg_fixed" class="form-control border-danger" placeholder="Fixed Charge">
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                                <div class="row mb-3 align-items-center">
+                                                  <label class="col-sm-5 col-form-label fw-medium">Unit Charge:</label>
+                                                  <div class="col-sm-7">
+                                                    <div class="input-group input-group-sm">
+                                                      <span class="input-group-text bg-danger text-white border-danger">
+                                                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                                                      </span>
+                                                      <input type="text" id="dg_unit" class="form-control border-danger" placeholder="Unit Charge">
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                                <div class="row mb-2 align-items-center">
+                                                  <label class="col-sm-5 col-form-label fw-medium">Sanction Load:</label>
+                                                  <div class="col-sm-7">
+                                                    <div class="input-group input-group-sm">
+                                                      <span class="input-group-text bg-danger text-white border-danger">
+                                                        <i class="fa-solid fa-bolt"></i>
+                                                      </span>
+                                                      <input type="text" id="dg_load" class="form-control border-danger" placeholder="Sanction Load">
+                                                      <span class="input-group-text bg-danger text-white border-danger">kW</span>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+
+                                          </form>
+                                        </div>
+
+                                        <!-- Modal Footer -->
+                                        <div class="modal-footer bg-light py-3">
+                                          <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">
+                                            <i class="fa-solid fa-xmark me-1"></i> Cancel
+                                          </button>
+                                          <div>
+                                            <button type="button" id="disconnectBtn" class="btn btn-danger btn-sm px-3 me-2">
+                                              <i class="fa-solid fa-power-off me-1"></i> Disconnect
+                                            </button>
+                                            <button type="button" id="connectBtn" class="btn btn-success btn-sm px-3">
+                                              <i class="fa-solid fa-link me-1"></i> Connect
+                                            </button>
+                                          </div>
+                                        </div>
+                                        
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                            </tr>
+                          @php $i++; 
+                          @endphp
+                        @endforeach
+                    </tbody>
+
+              </table>
           </div>
-          <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"></button>
-        </div>
-
-        <!-- Modal Body -->
-        <div class="modal-body p-4">
-          <form id="rechargeForm" class="px-2">
-            
-            <!-- Recharge Section -->
-            <div class="card border-0 bg-light mb-4">
-              <div class="card-header bg-transparent border-0 py-2">
-                <div class="d-flex align-items-center">
-                  <i class="fa-solid fa-wallet text-primary me-2"></i>
-                  <h6 class="mb-0 fw-bold text-primary">Recharge Details</h6>
-                </div>
-              </div>
-              <div class="card-body pt-0">
-                <div class="row mb-3 align-items-center">
-                  <label class="col-sm-5 col-form-label fw-medium">Recharge Amount:</label>
-                  <div class="col-sm-7">
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text bg-primary text-white border-primary">
-                        <i class="fa-solid fa-indian-rupee-sign"></i>
-                      </span>
-                      <input type="text" id="recharge_amount" class="form-control border-primary" placeholder="Enter amount">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Mains Details -->
-            <div class="card border-0 bg-light mb-4">
-              <div class="card-header bg-transparent border-0 py-2">
-                <div class="d-flex align-items-center">
-                  <i class="fa-solid fa-plug text-success me-2"></i>
-                  <h6 class="mb-0 fw-bold text-success">Mains Details</h6>
-                </div>
-              </div>
-              <div class="card-body pt-0">
-                <div class="row mb-3 align-items-center">
-                  <label class="col-sm-5 col-form-label fw-medium">Fixed Charge:</label>
-                  <div class="col-sm-7">
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text bg-success text-white border-success">
-                        <i class="fa-solid fa-indian-rupee-sign"></i>
-                      </span>
-                      <input type="text" id="mains_fixed" class="form-control border-success" placeholder="Fixed Charge">
-                    </div>
-                  </div>
-                </div>
-                <div class="row mb-3 align-items-center">
-                  <label class="col-sm-5 col-form-label fw-medium">Unit Charge:</label>
-                  <div class="col-sm-7">
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text bg-success text-white border-success">
-                        <i class="fa-solid fa-indian-rupee-sign"></i>
-                      </span>
-                      <input type="text" id="mains_unit" class="form-control border-success" placeholder="Unit Charge">
-                    </div>
-                  </div>
-                </div>
-                <div class="row mb-2 align-items-center">
-                  <label class="col-sm-5 col-form-label fw-medium">Sanction Load:</label>
-                  <div class="col-sm-7">
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text bg-success text-white border-success">
-                        <i class="fa-solid fa-bolt"></i>
-                      </span>
-                      <input type="text" id="mains_load" class="form-control border-success" placeholder="Sanction Load">
-                      <span class="input-group-text bg-success text-white border-success">kW</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- DG Details -->
-            <div class="card border-0 bg-light mb-3">
-              <div class="card-header bg-transparent border-0 py-2">
-                <div class="d-flex align-items-center">
-                  <i class="fa-solid fa-gas-pump text-danger me-2"></i>
-                  <h6 class="mb-0 fw-bold text-danger">DG Details</h6>
-                </div>
-              </div>
-              <div class="card-body pt-0">
-                <div class="row mb-3 align-items-center">
-                  <label class="col-sm-5 col-form-label fw-medium">Fixed Charge:</label>
-                  <div class="col-sm-7">
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text bg-danger text-white border-danger">
-                        <i class="fa-solid fa-indian-rupee-sign"></i>
-                      </span>
-                      <input type="text" id="dg_fixed" class="form-control border-danger" placeholder="Fixed Charge">
-                    </div>
-                  </div>
-                </div>
-                <div class="row mb-3 align-items-center">
-                  <label class="col-sm-5 col-form-label fw-medium">Unit Charge:</label>
-                  <div class="col-sm-7">
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text bg-danger text-white border-danger">
-                        <i class="fa-solid fa-indian-rupee-sign"></i>
-                      </span>
-                      <input type="text" id="dg_unit" class="form-control border-danger" placeholder="Unit Charge">
-                    </div>
-                  </div>
-                </div>
-                <div class="row mb-2 align-items-center">
-                  <label class="col-sm-5 col-form-label fw-medium">Sanction Load:</label>
-                  <div class="col-sm-7">
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text bg-danger text-white border-danger">
-                        <i class="fa-solid fa-bolt"></i>
-                      </span>
-                      <input type="text" id="dg_load" class="form-control border-danger" placeholder="Sanction Load">
-                      <span class="input-group-text bg-danger text-white border-danger">kW</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </form>
-        </div>
-
-        <!-- Modal Footer -->
-        <div class="modal-footer bg-light py-3">
-          <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">
-            <i class="fa-solid fa-xmark me-1"></i> Cancel
-          </button>
-          <div>
-            <button type="button" id="disconnectBtn" class="btn btn-danger btn-sm px-3 me-2">
-              <i class="fa-solid fa-power-off me-1"></i> Disconnect
-            </button>
-            <button type="button" id="connectBtn" class="btn btn-success btn-sm px-3">
-              <i class="fa-solid fa-link me-1"></i> Connect
-            </button>
-          </div>
-        </div>
-        
       </div>
-    </div>
-  </div>
-</td>
-
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  const storageKey = "recharge_settings";
-  const fields = [
-    "recharge_amount",
-    "mains_fixed", "mains_unit", "mains_load",
-    "dg_fixed", "dg_unit", "dg_load"
-  ];
-
-  // Load old data if exists
-  const saved = localStorage.getItem(storageKey);
-  if (saved) {
-    const data = JSON.parse(saved);
-    fields.forEach(f => {
-      if (data[f]) document.getElementById(f).value = data[f];
-    });
-  }
-
-  // ✅ Save data as JSON and then clear inputs
-  document.getElementById("connectBtn").addEventListener("click", function() {
-    const obj = {};
-    fields.forEach(f => obj[f] = document.getElementById(f).value.trim());
-
-    // Save to localStorage
-    localStorage.setItem(storageKey, JSON.stringify(obj, null, 2));
-    console.log("Saved JSON:", JSON.stringify(obj, null, 2));
-
-    // ✅ Clear all input fields after saving
-    fields.forEach(f => document.getElementById(f).value = "");
-
-    // Optional: success feedback
-    alert("Recharge settings saved successfully!");
-  });
-
-  // ✅ Clear all data on Disconnect
-  document.getElementById("disconnectBtn").addEventListener("click", function() {
-    localStorage.removeItem(storageKey);
-    fields.forEach(f => document.getElementById(f).value = "");
-    console.log("LocalStorage cleared for", storageKey);
-  });
-});
-</script>
-
-
-
-
-            </tr>
-            @php $i++; @endphp
-            @endforeach
-            </tbody>
-
-            </table>
-        </div>
-    </div>
     </div>
 
     <script src="{{url('backend/assets/js/admin-jquery-3.6.0.min.js')}}"></script>
 
-    <script>
-    function updateRefreshTime() {
-        const now = new Date();
-        const options = {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        };
-        const formattedTime = now.toLocaleString('en-IN', options);
-        document.getElementById('lastRefreshTime').textContent = `Last refreshed: ${formattedTime}`;
-    }
+     <script>
+        document.addEventListener("DOMContentLoaded", function() {
+          const storageKey = "recharge_settings";
+          const fields = [
+            "recharge_amount",
+            "mains_fixed", "mains_unit", "mains_load",
+            "dg_fixed", "dg_unit", "dg_load"
+          ];
 
-    function handleRefresh() {
-        $('#loader').show();
-        updateRefreshTime();
-        setTimeout(() => {
-            location.reload();
-        }, 500);
-    }
-
-    setInterval(handleRefresh, 5 * 60 * 1000);
-    
-    document.addEventListener('DOMContentLoaded', updateRefreshTime);
-
-    document.getElementById('downloadPdf').addEventListener('click', function() {
-        document.getElementById('loader').style.display = 'block';
-
-        const originalTable = document.getElementById('siteTable');
-        const clonedTable = originalTable.cloneNode(true);
-
-        // Remove hidden rows
-        $(clonedTable).find('tr').each(function() {
-            if ($(this).css('display') === 'none') {
-                $(this).remove();
-            }
-        });
-
-        // Build wrapper
-        const wrapper = document.createElement('div');
-        wrapper.classList.add('pdf-wrapper');
-
-        const now = new Date();
-        const formattedDateTime = now.toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
-
-        const heading = document.createElement('h3');
-        heading.innerText = `DGMS Site Overview Report\nGenerated on: ${formattedDateTime}`;
-        wrapper.appendChild(heading);
-        wrapper.appendChild(clonedTable);
-
-        document.body.appendChild(wrapper); // attach to DOM for rendering
-
-        const opt = {
-            margin: [10, 10, 10, 10],
-            filename: 'DGMS_Site_Overview_' + now.toISOString().slice(0, 10) + '.pdf',
-            image: {
-                type: 'jpeg',
-                quality: 1
-            }, // highest quality
-            html2canvas: {
-                scale: 4, // very high resolution
-                useCORS: true,
-                scrollX: 0,
-                scrollY: 0
-            },
-            jsPDF: {
-                unit: 'px',
-                format: [1400, 1000], // wider than A3
-                orientation: 'landscape'
-            }
-        };
-
-        // Delay helps rendering accuracy
-        setTimeout(() => {
-            html2pdf()
-                .set(opt)
-                .from(wrapper)
-                .save()
-                .then(() => {
-                    document.getElementById('loader').style.display = 'none';
-                    document.body.removeChild(wrapper);
-                })
-                .catch((error) => {
-                    document.getElementById('loader').style.display = 'none';
-                    alert('PDF generation failed: ' + error.message);
-                    document.body.removeChild(wrapper);
-                });
-        }, 300);
-    });
-
-
-    // Reset filters
-    document.getElementById('resetFilters').addEventListener('click', function() {
-        document.getElementById('bankSelect').value = '';
-        document.getElementById('locationSelect').value = '';
-        filterSites();
-    });
-
-    $(document).ready(function() {
-        $('#bankSelect, #locationSelect').change(filterSites);
-
-        // Initialize status dots
-        updateStatusDots();
-    });
-
-    function filterSites() {
-        const bankValue = $('#bankSelect').val().toLowerCase();
-        const locationValue = $('#locationSelect').val().toLowerCase();
-
-        $('.site-row').each(function() {
-            const rowBank = $(this).data('bank').toString().toLowerCase();
-            const rowLocation = $(this).data('location').toString().toLowerCase();
-
-            const bankMatch = bankValue === '' || rowBank.includes(bankValue);
-            const locationMatch = locationValue === '' || rowLocation.includes(locationValue);
-
-            if (bankMatch && locationMatch) {
-                $(this).show();
-            } else {
-                $(this).hide();
-            }
-        });
-    }
-
-    function updateStatusDots() {
-        let siteIds = [];
-
-        $('.site-row').each(function() {
-            siteIds.push($(this).data('site-id'));
-
-            $(this).find('.gateway-dot, .controller-dot')
-                .removeClass('ONLINE OFFLINE')
-                .addClass('loading');
-
-            // Don't change the controller status text
-            // Don't show "Loading..."
-
-            $(this).find('.site-name-link')
-                .css('color', '#6c757d');
-        });
-
-        if (siteIds.length > 0) {
-            $.ajax({
-                url: '{{ route("admin.site.statuses") }}',
-                method: 'POST',
-                data: {
-                    site_ids: siteIds,
-                    _token: '{{ csrf_token() }}'
-                },
-                success: function(data) {
-                    $.each(data, function(siteId, statuses) {
-                        let row = $('.site-row[data-site-id="' + siteId + '"]');
-
-                        let dgStatus = (statuses.dg_status || '').replace(/['"]+/g, '');
-                        let ctrlStatus = (statuses.controller_status || '').replace(/['"]+/g, '');
-
-                        // Update dot status
-                        row.find('.gateway-dot')
-                            .removeClass('loading ONLINE OFFLINE')
-                            .addClass(dgStatus);
-
-                        row.find('.controller-dot')
-                            .removeClass('loading ONLINE OFFLINE')
-                            .addClass(ctrlStatus);
-
-                        // Update site name color
-                        let color = (ctrlStatus === 'ONLINE') ? 'green' : 'red';
-                        row.find('.site-name-link').css('color', color);
-
-                        // Show "—" only if DG is OFFLINE
-                        if (dgStatus === 'OFFLINE') {
-                            row.find('.controller-status-text').html(
-                                '<strong style="font-size: 1.3rem; font-weight: bold;">—</strong>'
-                            );
-                        }
-                        // Else: do nothing, leave the ON/OFF text from Blade
-                    });
-                },
-                error: function() {
-                    $('.gateway-dot, .controller-dot')
-                        .removeClass('loading ONLINE')
-                        .addClass('OFFLINE');
-
-                    $('.controller-status-text').html(
-                        '<strong style="font-size: 1.3rem; font-weight: bold;">—</strong>'
-                    );
-
-                    $('.site-name-link').css('color', 'red');
-                }
+          // Load old data if exists
+          const saved = localStorage.getItem(storageKey);
+          if (saved) {
+            const data = JSON.parse(saved);
+            fields.forEach(f => {
+              if (data[f]) document.getElementById(f).value = data[f];
             });
-        }
-    }
+          }
+
+          // ✅ Save data as JSON and then clear inputs
+          document.getElementById("connectBtn").addEventListener("click", function() {
+            const obj = {};
+            fields.forEach(f => obj[f] = document.getElementById(f).value.trim());
+
+            // Save to localStorage
+            localStorage.setItem(storageKey, JSON.stringify(obj, null, 2));
+            console.log("Saved JSON:", JSON.stringify(obj, null, 2));
+
+            // ✅ Clear all input fields after saving
+            fields.forEach(f => document.getElementById(f).value = "");
+
+            // Optional: success feedback
+            alert("Recharge settings saved successfully!");
+          });
+
+          // ✅ Clear all data on Disconnect
+          document.getElementById("disconnectBtn").addEventListener("click", function() {
+            localStorage.removeItem(storageKey);
+            fields.forEach(f => document.getElementById(f).value = "");
+            console.log("LocalStorage cleared for", storageKey);
+          });
+        });
+      </script>
+      <script>
+      function updateRefreshTime() {
+          const now = new Date();
+          const options = {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: true
+          };
+          const formattedTime = now.toLocaleString('en-IN', options);
+          document.getElementById('lastRefreshTime').textContent = `Last refreshed: ${formattedTime}`;
+      }
+
+      function handleRefresh() {
+          $('#loader').show();
+          updateRefreshTime();
+          setTimeout(() => {
+              location.reload();
+          }, 500);
+      }
+
+      setInterval(handleRefresh, 5 * 60 * 1000);
+      
+      document.addEventListener('DOMContentLoaded', updateRefreshTime);
+
+      document.getElementById('downloadPdf').addEventListener('click', function() {
+          document.getElementById('loader').style.display = 'block';
+
+          const originalTable = document.getElementById('siteTable');
+          const clonedTable = originalTable.cloneNode(true);
+
+          // Remove hidden rows
+          $(clonedTable).find('tr').each(function() {
+              if ($(this).css('display') === 'none') {
+                  $(this).remove();
+              }
+          });
+
+          // Build wrapper
+          const wrapper = document.createElement('div');
+          wrapper.classList.add('pdf-wrapper');
+
+          const now = new Date();
+          const formattedDateTime = now.toLocaleString('en-IN', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true
+          });
+
+          const heading = document.createElement('h3');
+          heading.innerText = `DGMS Site Overview Report\nGenerated on: ${formattedDateTime}`;
+          wrapper.appendChild(heading);
+          wrapper.appendChild(clonedTable);
+
+          document.body.appendChild(wrapper); // attach to DOM for rendering
+
+          const opt = {
+              margin: [10, 10, 10, 10],
+              filename: 'DGMS_Site_Overview_' + now.toISOString().slice(0, 10) + '.pdf',
+              image: {
+                  type: 'jpeg',
+                  quality: 1
+              }, // highest quality
+              html2canvas: {
+                  scale: 4, // very high resolution
+                  useCORS: true,
+                  scrollX: 0,
+                  scrollY: 0
+              },
+              jsPDF: {
+                  unit: 'px',
+                  format: [1400, 1000], // wider than A3
+                  orientation: 'landscape'
+              }
+          };
+
+          // Delay helps rendering accuracy
+          setTimeout(() => {
+              html2pdf()
+                  .set(opt)
+                  .from(wrapper)
+                  .save()
+                  .then(() => {
+                      document.getElementById('loader').style.display = 'none';
+                      document.body.removeChild(wrapper);
+                  })
+                  .catch((error) => {
+                      document.getElementById('loader').style.display = 'none';
+                      alert('PDF generation failed: ' + error.message);
+                      document.body.removeChild(wrapper);
+                  });
+          }, 300);
+      });
+
+
+      // Reset filters
+      document.getElementById('resetFilters').addEventListener('click', function() {
+          document.getElementById('bankSelect').value = '';
+          document.getElementById('locationSelect').value = '';
+          filterSites();
+      });
+
+      $(document).ready(function() {
+          $('#bankSelect, #locationSelect').change(filterSites);
+
+          // Initialize status dots
+          updateStatusDots();
+      });
+
+      function filterSites() {
+          const bankValue = $('#bankSelect').val().toLowerCase();
+          const locationValue = $('#locationSelect').val().toLowerCase();
+
+          $('.site-row').each(function() {
+              const rowBank = $(this).data('bank').toString().toLowerCase();
+              const rowLocation = $(this).data('location').toString().toLowerCase();
+
+              const bankMatch = bankValue === '' || rowBank.includes(bankValue);
+              const locationMatch = locationValue === '' || rowLocation.includes(locationValue);
+
+              if (bankMatch && locationMatch) {
+                  $(this).show();
+              } else {
+                  $(this).hide();
+              }
+          });
+      }
+
+      function updateStatusDots() {
+          let siteIds = [];
+
+          $('.site-row').each(function() {
+              siteIds.push($(this).data('site-id'));
+
+              $(this).find('.gateway-dot, .controller-dot')
+                  .removeClass('ONLINE OFFLINE')
+                  .addClass('loading');
+
+              // Don't change the controller status text
+              // Don't show "Loading..."
+
+              $(this).find('.site-name-link')
+                  .css('color', '#6c757d');
+          });
+
+          if (siteIds.length > 0) {
+              $.ajax({
+                  url: '{{ route("admin.site.statuses") }}',
+                  method: 'POST',
+                  data: {
+                      site_ids: siteIds,
+                      _token: '{{ csrf_token() }}'
+                  },
+                  success: function(data) {
+                      $.each(data, function(siteId, statuses) {
+                          let row = $('.site-row[data-site-id="' + siteId + '"]');
+
+                          let dgStatus = (statuses.dg_status || '').replace(/['"]+/g, '');
+                          let ctrlStatus = (statuses.controller_status || '').replace(/['"]+/g, '');
+
+                          // Update dot status
+                          row.find('.gateway-dot')
+                              .removeClass('loading ONLINE OFFLINE')
+                              .addClass(dgStatus);
+
+                          row.find('.controller-dot')
+                              .removeClass('loading ONLINE OFFLINE')
+                              .addClass(ctrlStatus);
+
+                          // Update site name color
+                          let color = (ctrlStatus === 'ONLINE') ? 'green' : 'red';
+                          row.find('.site-name-link').css('color', color);
+
+                          // Show "—" only if DG is OFFLINE
+                          if (dgStatus === 'OFFLINE') {
+                              row.find('.controller-status-text').html(
+                                  '<strong style="font-size: 1.3rem; font-weight: bold;">—</strong>'
+                              );
+                          }
+                          // Else: do nothing, leave the ON/OFF text from Blade
+                      });
+                  },
+                  error: function() {
+                      $('.gateway-dot, .controller-dot')
+                          .removeClass('loading ONLINE')
+                          .addClass('OFFLINE');
+
+                      $('.controller-status-text').html(
+                          '<strong style="font-size: 1.3rem; font-weight: bold;">—</strong>'
+                      );
+
+                      $('.site-name-link').css('color', 'red');
+                  }
+              });
+          }
+      }
     </script>
 </body>
 

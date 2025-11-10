@@ -20,17 +20,15 @@ class SyncFrontendData extends Command
 
         $start = microtime(true);
 
-        $sites = Site::select(['id', 'site_name', 'slug', 'email', 'data', 'device_id', 'clusterID'])->get();
-
-        $mdValues = $this->extractMdFields(
-            $sites->pluck('data')->map(fn($data) => json_decode($data, true))->toArray()
-        );
+        // Fetch all sites
+        $sites = Site::select(['id', 'site_name', 'slug', 'email', 'data', 'alternate_device_id', 'device_id', 'clusterID'])->get();
 
         if ($sites->isEmpty()) {
             $this->warn("No sites found.");
             return;
         }
 
+        // MongoDB connection
         $mongoUri = 'mongodb://isaqaadmin:password@44.240.110.54:27017/isa_qa';
         $mongoClient = new \MongoDB\Client($mongoUri);
         $collection = $mongoClient->isa_qa->device_events;
@@ -39,27 +37,36 @@ class SyncFrontendData extends Command
 
         $totalInserted = 0;
         $totalUpdated = 0;
+        $moduleLatest = [];
 
-        $moduleLatest = []; 
-
+        // Loop through all sites
         foreach ($sites as $site) {
             $siteData = json_decode($site->data, true);
             $mdValues = $this->extractMdFields($siteData);
             $uniqueMdValues = array_unique(array_filter(array_map('intval', (array) $mdValues)));
 
             $deviceId = $site->device_id ?? null;
+            $alternateDeviceId = $site->alternate_device_id ?? null;
 
-            if (!$deviceId || !$uniqueMdValues) {
-                $this->warn("Skipping site '{$site->site_name}' (missing device_id or module_id)");
+            if (!$deviceId || !$alternateDeviceId || empty($uniqueMdValues)) {
+                $this->warn("Skipping site '{$site->site_name}' (missing device_id, alternate_device_id, or module_id)");
                 continue;
             }
 
             foreach ($uniqueMdValues as $moduleId) {
+                // ✅ Correct MongoDB query — match device_id OR alternate_device_id
                 $event = $collection->findOne(
                     [
-                        'device_id' => $deviceId,
-                        'module_id' => $moduleId,
-                        'createdAt' => ['$gte' => $dateThreshold]
+                        '$and' => [
+                            [
+                                '$or' => [
+                                    ['device_id' => $deviceId],
+                                    ['device_id' => $alternateDeviceId],
+                                ]
+                            ],
+                            ['module_id' => $moduleId],
+                            ['createdAt' => ['$gte' => $dateThreshold]],
+                        ]
                     ],
                     [
                         'sort' => ['createdAt' => -1]
@@ -68,8 +75,11 @@ class SyncFrontendData extends Command
 
                 if ($event) {
                     $eventArray = json_decode(json_encode($event), true);
-                    if (!isset($moduleLatest[$moduleId]) ||
-                        $eventArray['createdAt'] > $moduleLatest[$moduleId]['createdAt']) {
+
+                    if (
+                        !isset($moduleLatest[$moduleId]) ||
+                        $eventArray['createdAt'] > $moduleLatest[$moduleId]['createdAt']
+                    ) {
                         $moduleLatest[$moduleId] = $eventArray;
                     }
                 }
@@ -78,15 +88,30 @@ class SyncFrontendData extends Command
 
         $this->info("Collected " . count($moduleLatest) . " latest events across all modules.");
 
-        // 🔹 Sync into MySQL
+        // 🔹 Sync data into MySQL
         foreach ($moduleLatest as $moduleId => $eventArray) {
             DB::transaction(function () use ($sites, $eventArray, $moduleId, &$totalUpdated, &$totalInserted) {
-                $deviceId = $eventArray['device_id'];
-                $site = $sites->firstWhere('device_id', $deviceId);
+                $deviceId = $eventArray['device_id'] ?? null;
+                if (!$deviceId) {
+                    return;
+                }
 
+                // ✅ Find the correct site based on device_id or alternate_device_id
+                $site = $sites->first(function ($s) use ($deviceId) {
+                    return $s->device_id === $deviceId || $s->alternate_device_id === $deviceId;
+                });
+
+                if (!$site) {
+                    return;
+                }
+
+                // ✅ Update if exists, otherwise insert new record
                 $updatedCount = DB::table('mongodb_frontend')
                     ->where('site_id', $site->id)
-                    ->whereJsonContains('data->device_id', $deviceId)
+                    ->where(function ($q) use ($deviceId) {
+                        $q->whereJsonContains('data->device_id', $deviceId)
+                        ->orWhereJsonContains('data->device_id', (string) $deviceId);
+                    })
                     ->where(function ($q) use ($moduleId) {
                         $q->whereJsonContains('data->module_id', (int)$moduleId)
                         ->orWhereJsonContains('data->module_id', (string)$moduleId);
@@ -109,9 +134,9 @@ class SyncFrontendData extends Command
                 }
             });
         }
-        
-        $duration = microtime(true) - $start;
-        $this->info("Sync complete. Inserted {$totalInserted}, updated {$totalUpdated} in {$duration} seconds.");
+
+        $duration = round(microtime(true) - $start, 2);
+        $this->info("✅ Sync complete. Inserted {$totalInserted}, updated {$totalUpdated} in {$duration} seconds.");
     }
 
     private function extractMdFields($data)
