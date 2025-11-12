@@ -552,7 +552,7 @@
                                                 </div>
                                                 <hr />
                                                 <!-- Running Hours Section -->
-                                                <!-- <div class="row align-items-center"
+                                                <div class="row align-items-center"
                                                         style="font-size: 10px; padding: 8px; margin-bottom: 0; margin-top: -20px;">
                                                         <div
                                                             class="col-xs-6 d-flex align-items-center justify-content-center fw-bold">
@@ -580,9 +580,29 @@
                                                                     value="1">
                                                             </div>
                                                         </div>
-                                                    </div> -->
+                                                    </div> 
                                             </div>
-                                        </div>
+
+                                             <div class="col text-center fw-bold">
+                                                        Connection/Disconnection
+                                                        <div class="row g-2 justify-content-center">
+                                                            <!-- First row (2 inputs) -->
+                                                            <div class="col-auto">
+                                                                <input type="text" name="connect_md"
+                                                                    class="form-control" style="width: 80px;"
+                                                                    value="{{ old('parameters', $siteData['parameters']['connect']['md'] ?? '') }}"
+                                                                    placeholder="MD">
+                                                            </div>
+                                                            <div class="col-auto">
+                                                                <input type="text" name="connect_add"
+                                                                    class="form-control" style="width: 80px;"
+                                                                    value="{{ old('parameters', $siteData['parameters']['connect']['add'] ?? '') }}"
+                                                                    placeholder="ADD">
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                             </div>
                                     </div>
 
                                     <div class="col-md-3">

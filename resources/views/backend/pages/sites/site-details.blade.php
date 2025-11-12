@@ -285,7 +285,7 @@
                                                         }
                                                     }
                                                 ?>
-                                            <span class="parameter-value">{{ $addValue }} °C</span>
+                                            <span class="parameter-value">{{ $addValue }} V </span>
                                         </div>
                                     </td>
                                     <td>
@@ -304,7 +304,7 @@
                                                         }
                                                     }
                                                 ?>
-                                            <span class="parameter-value">{{ $addValue }} °C</span>
+                                            <span class="parameter-value">{{ $addValue }} </span>
                                         </div>
                                     </td>
                                     <td>
@@ -323,7 +323,7 @@
                                                         }
                                                     }
                                                 ?>
-                                            <span class="parameter-value">{{ $addValue }} psi</span>
+                                            <span class="parameter-value">{{ $addValue }}A </span>
                                         </div>
                                     </td>
                                     <td>
@@ -342,7 +342,7 @@
                                                         }
                                                     }
                                                 ?>
-                                            <span class="parameter-value">{{ $addValue }}</span>
+                                            <span class="parameter-value">{{ $addValue }}HZ</span>
                                         </div>
                                     </td>
                                     <td>
@@ -368,7 +368,7 @@
                                                         }
                                                     }
                                                 ?>
-                                            <span class="parameter-value">{{ $addValue }} V</span>
+                                            <span class="parameter-value">{{ $addValue }} </span>
                                         </div>
                                     </td>
                                 </tr>
@@ -704,7 +704,7 @@
                                                             }
                                                         }
                                                     ?>
-                                                    <span class="parameter-value">{{ $addValue }} °C</span>
+                                                    <span class="parameter-value">{{ $addValue }} V</span>
                                                 </div>
                                                                     </td>
                                                                     <td>
@@ -723,7 +723,7 @@
                                                         }
                                                     }
                                                 ?>
-                                                    <span class="parameter-value">{{ $addValue }} °C</span>
+                                                    <span class="parameter-value">{{ $addValue }}</span>
                                                 </div>
                                                                     </td>
                                                                     <td>
@@ -742,7 +742,7 @@
                                                             }
                                                         }
                                                     ?>
-                                                    <span class="parameter-value">{{ $addValue }} psi</span>
+                                                    <span class="parameter-value">{{ $addValue }} A</span>
                                                 </div>
                                                                     </td>
                                                                     <td>
@@ -761,7 +761,7 @@
                                                         }
                                                     }
                                                 ?>
-                                                    <span class="parameter-value">{{ $addValue }}</span>
+                                                    <span class="parameter-value">{{ $addValue }} HZ </span>
                                                 </div>
                                                                     </td>
                                                                     <td>
@@ -786,7 +786,7 @@
                                                         }
                                                     }
                                                 ?>
-                                                    <span class="parameter-value">{{ $addValue }} V</span>
+                                                    <span class="parameter-value">{{ $addValue }} </span>
                                                 </div>
                                                                     </td>
                                                                 </tr>

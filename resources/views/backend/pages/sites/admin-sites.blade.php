@@ -13,6 +13,12 @@
 
     <script src="{{url('backend/assets/js/admin-bootstrap.bundle.js')}}"></script>
     <script src="{{url('backend/assets/js/adminCDN.js')}}"></script>
+    <!-- jQuery (if not already loaded) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
         integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- PDF Library -->
@@ -549,12 +555,11 @@
                                                             </div>
                                                         </div>
 
-                                                        <button type="button" id="disconnectBtn"
-                                                            class="btn btn-danger btn-sm px-3 me-2">
+                                                        <button type="button" id="disconnectBtn" class="btn btn-danger btn-sm px-3 me-2">
                                                             <i class="fa-solid fa-power-off me-1"></i> Disconnect
                                                         </button>
-                                                        <button type="button" id="connectBtn"
-                                                            class="btn btn-success btn-sm px-3">
+
+                                                        <button type="button" id="connectBtn" class="btn btn-success btn-sm px-3">
                                                             <i class="fa-solid fa-link me-1"></i> Connect
                                                         </button>
 
@@ -568,7 +573,7 @@
 
                                                         <div class="text-end">
                                                             <button type="submit" class="btn btn-primary btn-sm">
-                                                                <i class="fa-solid fa-save me-1"></i> Save Settings
+                                                                <i class="fa-solid fa-save me-1"></i> Submit
                                                             </button>
                                                         </div>
 
@@ -857,6 +862,73 @@
         });
     });
     </script>
+
+
+<!-- SweetAlert + jQuery (include once if not already in page) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+$(document).on('click', '#connectBtn, #disconnectBtn', function(e) {
+    e.preventDefault();
+
+    let isConnect = $(this).attr('id') === 'connectBtn';
+    let actionType = isConnect ? 'connect' : 'disconnect';
+    let argValue = isConnect ? 0 : 1;
+
+    // get pre-filled values
+    let moduleId = $('input[name="connect_md"]').val();
+    let cmdArg = $('input[name="connect_add"]').val();
+    let cmdField = 'connection';
+
+    Swal.fire({
+        title: `Are you sure you want to ${actionType.toUpperCase()}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '/admin/start-process',
+                type: 'POST',
+                data: {
+                    argValue,
+                    moduleId,
+                    cmdField,
+                    cmdArg,
+                    actionType
+                },
+                beforeSend: function() {
+                    $('#connectBtn, #disconnectBtn').prop('disabled', true);
+                },
+                success: function(response) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: `${actionType.toUpperCase()} Successful!`,
+                        text: response.message
+                    });
+                    console.log('✅ Sent Data:', { argValue, moduleId, cmdField, cmdArg });
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Something went wrong. Please try again.'
+                    });
+                    console.error(xhr.responseText);
+                },
+                complete: function() {
+                    $('#connectBtn, #disconnectBtn').prop('disabled', false);
+                }
+            });
+        }
+    });
+});
+</script>
+
+
+    
 </body>
 
 </html>

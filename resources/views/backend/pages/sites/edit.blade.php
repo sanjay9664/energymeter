@@ -370,7 +370,7 @@ input {
                                 </div>
 
                                 <div class="col-md-3">
-                                    <div class="card" style="width: 100%; height: 975px;">
+                                    <div class="card" style="width: 100%; height: 1075px;">
                                         <div class="card-header text-center bg-secondary text-white">
                                             ENGINE PARAMETERS
                                         </div>
@@ -649,6 +649,26 @@ input {
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="text-center py-1">
+                                               <span class="d-block fw-bold mb-1">Connection/Disconnection</span>
+                                                        <div class="row g-2 justify-content-center">
+                                                            <!-- First row (2 inputs) -->
+                                                            <div class="col-auto">
+                                                                <input type="text" name="connect_md"
+                                                                    class="form-control" style="width: 80px;"
+                                                                    value="{{ old('parameters', $siteData['connect']['md'] ?? '') }}"
+                                                                    placeholder="MD">
+                                                            </div>
+                                                            <div class="col-auto">
+                                                                <input type="text" name="connect_add"
+                                                                    class="form-control" style="width: 80px;"
+                                                                    value="{{ old('parameters', $siteData['connect']['add'] ?? '') }}"
+                                                                    placeholder="ADD">
+                                                            </div>
+
+                                                        </div>
+                                           
+                                        </div>
                                         </div>
                                     </div>
                                 </div>
