@@ -61,11 +61,11 @@
                                 </td>
                                 <td data-label="Brand">
                                     <!-- <strong>Grid:</strong> {{ $sitejsonData->brand }} -->
-                                    <strong>Grid:</strong> {{ $rechargeSetting->m_sanction_load}}
+                                    <strong>Grid:</strong> {{ $rechargeSetting->m_sanction_load}}kW
                                 </td>
                                 <td data-label="Capacity">
                                     <!-- <strong>Capacity:</strong> {{ $sitejsonData->capacity }} -->
-                                    <strong>DG:</strong> {{ $rechargeSetting->dg_sanction_load}}
+                                    <strong>DG:</strong> {{ $rechargeSetting->dg_sanction_load}}kW
                                 </td>
                             </tr>
 
@@ -535,10 +535,10 @@
                                     <strong>Controller:</strong> {{ $sitejsonData->asset_name }}
                                 </td>
                                 <td data-label="Brand">
-                                    <strong>Grid:</strong> {{ $rechargeSetting->m_sanction_load}}
+                                    <strong>Grid:</strong> {{ $rechargeSetting->m_sanction_load}}kW
                                 </td>
                                 <td data-label="Capacity">
-                                    <strong>DG:</strong> {{ $rechargeSetting->dg_sanction_load}}
+                                    <strong>DG:</strong> {{ $rechargeSetting->dg_sanction_load}}kW
                                 </td>
                             </tr>
                                                         <tr>

@@ -261,7 +261,7 @@
                                 ?>
                                 <td>
                                     <span
-                                        class="controller-status-text {{ $addsupplyValue }}"><strong>{{ $addsupplyValue }}</strong></span>
+                                        class="controller-status-text {{ $addsupplyValue }}"><strong>{{ $addsupplyValue }} </strong></span>
                                 </td>
 
                                 <td class="status-cell">
@@ -369,7 +369,13 @@
                                     // dd($addValue);
                                 ?>
                                 <td>{{ $addkwhValue }}</td>
-                                <td>{{ $rechargeSetting[$site->id]->m_recharge_amount ?? '' }}</td>
+                                <!-- <td>{{ $rechargeSetting[$site->id]->m_recharge_amount ?? '' }}</td> -->
+                                 <td class="rechargeStatus"
+    data-site-id="{{ $site->id }}"
+    data-amount="{{ $rechargeSetting[$site->id]->m_recharge_amount ?? 0 }}">
+    {{ $rechargeSetting[$site->id]->m_recharge_amount ?? 0 }}
+</td>
+
 
 
                                 <td class="status-cell">
@@ -441,13 +447,21 @@
                                                                             class="form-control border-primary"
                                                                             value="{{ $rechargeSetting[$site->id]->m_recharge_amount ?? '' }}"
                                                                             placeholder="Enter amount"> -->
-                                                                            <input type="text" 
-    name="m_recharge_amount" 
-    id="m_recharge_amount_{{ $site->id }}" 
-    class="form-control border-primary"
-    value=""   {{-- ALWAYS BLANK --}}
-    placeholder="Enter amount"
-    data-site-id="{{ $site->id }}">
+                                                                               <!-- <input type="text" 
+                                                                                name="m_recharge_amount" 
+                                                                                id="m_recharge_amount_{{ $site->id }}" 
+                                                                                class="form-control border-primary" 
+                                                                                value="{{ $rechargeSetting[$site->id]->m_recharge_amount ?? '' }}" 
+                                                                                placeholder="Enter amount"
+                                                                                data-site-id="{{ $site->id }}"> -->
+                                                                                <input type="text" 
+                                                                                name="m_recharge_amount" 
+                                                                                id="m_recharge_amount_{{ $site->id }}" 
+                                                                                class="form-control border-primary"
+                                                                                value=""   {{-- ALWAYS BLANK --}}
+                                                                                placeholder="Enter amount"
+                                                                                data-site-id="{{ $site->id }}">
+
 
 
                                                                         </div>
@@ -481,6 +495,7 @@
                                                                                 class="form-control border-success"
                                                                                 placeholder="Fixed Charge"
                                                                                 value="{{ $rechargeSetting[$site->id]->m_fixed_charge ?? '' }}">
+                                                                                <span class="input-group-text bg-success text-white border-success">Per Month/kW</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -518,6 +533,7 @@
                                                                                 value="{{ $rechargeSetting[$site->id]->m_sanction_load ?? '' }}">
                                                                             <span
                                                                                 class="input-group-text bg-success text-white border-success">kW</span>
+                                                                                
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -1164,7 +1180,9 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script> -->
 
-<script>
+
+<!-- ODL RIGHT CODE -->
+<!-- <script>
 document.addEventListener("DOMContentLoaded", function() {
 
     // ✅ Manual Connect/Disconnect Button Click
@@ -1267,8 +1285,126 @@ document.querySelectorAll('input[name="m_recharge_amount"]').forEach(function(in
 
 
 });
-</script>
+</script> -->
 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    /* ---------------------------------------------------------
+       ✅ MANUAL CONNECT / DISCONNECT BUTTON — NO CHANGE
+    --------------------------------------------------------- */
+    $(document).on('click', '.connectBtn, .disconnectBtn', function(e) {
+        e.preventDefault();
+
+        let $btn = $(this);
+        let isConnect = $btn.hasClass('connectBtn');
+        let actionType = isConnect ? 'connect' : 'disconnect';
+
+        let siteId = $btn.data('site-id');
+        let argValue = $btn.find('input[name="argValue"]').val();
+        let moduleId = $btn.find('input[name="moduleId"]').val();
+        let cmdArg = $btn.find('input[name="cmdArg"]').val();
+        let cmdField = $btn.find('input[name="cmdField"]').val();
+
+        Swal.fire({
+            title: `Are you sure you want to ${actionType.toUpperCase()}?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/admin/start-process',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        site_id: siteId,
+                        argValue,
+                        moduleId,
+                        cmdArg,
+                        cmdField,
+                        actionType
+                    },
+                    beforeSend: () => $btn.prop('disabled', true),
+                    success: (response) => {
+                        Swal.fire({ icon: 'success', title: response.message });
+                    },
+                    error: (xhr) => {
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'Something went wrong.' });
+                    },
+                    complete: () => $btn.prop('disabled', false)
+                });
+            }
+        });
+    });
+
+
+
+
+    /* ---------------------------------------------------------
+       ❗❗ REMOVE INPUT-BASED CONNECT/DISCONNECT
+       Because you don't want input trigger!
+    --------------------------------------------------------- */
+    // ❌ Deleted old input event listener
+
+
+
+
+    /* ---------------------------------------------------------
+       ✅ NEW LOGIC:
+       Recharge amount JO TABLE ME SHOW HO RAHA HAI
+       US VALUE ke hisab se connect/disconnect chalega.
+    --------------------------------------------------------- */
+
+    document.querySelectorAll(".rechargeStatus").forEach(function(cell) {
+
+        let siteId = cell.dataset.siteId;
+        let value = parseFloat(cell.dataset.amount) || 0;
+
+        // Positive → connect, Negative → disconnect
+        let status = value > 0 ? 0 : 1;
+        let actionType = status === 0 ? "connect" : "disconnect";
+
+        // Correct button
+        let btnSelector = status === 0
+            ? `.connectBtn[data-site-id="${siteId}"]`
+            : `.disconnectBtn[data-site-id="${siteId}"]`;
+
+        let $btn = $(btnSelector);
+
+        if ($btn.length === 0) {
+            console.error("Button not found for site:", siteId);
+            return;
+        }
+
+        let moduleId = $btn.find('input[name="moduleId"]').val();
+        let cmdField = $btn.find('input[name="cmdField"]').val();
+        let cmdArg = $btn.find('input[name="cmdArg"]').val();
+
+        console.log(`AUTO ${actionType.toUpperCase()} for Site: ${siteId}, Amount: ${value}`);
+
+        fetch('{{ route('admin.trigger.connection.api') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                status,
+                site_id: siteId,
+                moduleId,
+                cmdField,
+                cmdArg
+            })
+        })
+        .then(res => res.json())
+        .then(data => console.log("API Response:", data))
+        .catch(err => console.error("API Error:", err));
+    });
+
+});
+</script>
 
 
 </body>
