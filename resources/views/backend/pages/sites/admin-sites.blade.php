@@ -265,32 +265,50 @@
                                 </td>
 
                                 <td class="status-cell">
-                                    <?php
-                                        $readOn = isset($sitejsonData['readOn']) ? floatval($sitejsonData['readOn']) : 0;
-                                        $fuelMd = $sitejsonData['readOn']['md'] ?? null;
-                                        $fuelKey = $sitejsonData['readOn']['add'] ?? null;
-                                        $addValue = 0;
+    <?php
+        $readOn = isset($sitejsonData['readOn']) ? floatval($sitejsonData['readOn']) : 0;
+        $fuelMd = $sitejsonData['readOn']['md'] ?? null;
+        $fuelKey = $sitejsonData['readOn']['add'] ?? null;
+        $addValue = '_';
 
-                                        foreach ($eventData as $event) {
-                                            $eventArray = $event instanceof \ArrayObject ? $event->getArrayCopy() : (array) $event;
+        foreach ($eventData as $event) {
+            $eventArray = $event instanceof \ArrayObject ? $event->getArrayCopy() : (array) $event;
 
-                                            if ($fuelMd && isset($eventArray['module_id']) && $eventArray['module_id'] == $fuelMd) {
-                                                if ($fuelKey && array_key_exists($fuelKey, $eventArray)) {
-                                                    $addValue = $eventArray[$fuelKey];
-                                                }
-                                                break;
-                                            }
-                                        }
-                                        // dd($addValue);
-                                    ?>
+            if ($fuelMd && isset($eventArray['module_id']) && $eventArray['module_id'] == $fuelMd) {
+                if ($fuelKey && array_key_exists($fuelKey, $eventArray)) {
+                    $addValue = $eventArray[$fuelKey];
+                }
+                break;
+            }
+        }
 
-                                    <div class="fuel-container">
-                                        <div class="fuel-indicator ">
-                                            <div class="fuel-level"></div>
-                                            <span class="fuel-indicator">{{ $addValue }}</span>
-                                        </div>
-                                    </div>
-                                </td>
+        // CONDITION BASED COLOR + TEXT
+        $showText = "Unknown";
+        $color = "gray";
+
+        if (strtolower($addValue) === "high") {
+            $showText = "Connected";
+            $color = "green";
+        } elseif (strtolower($addValue) === "low") {
+            $showText = "Disconnected";
+            $color = "red";
+        }
+    ?>
+
+    <div class="fuel-container">
+        <div class="fuel-indicator">
+            <div class="fuel-level"></div>
+
+            <!-- Status Text -->
+            <span class="fuel-indicator"
+                  style="padding:6px 10px; border-radius:5px;
+                         background:<?= $color ?>; color:white; font-weight:bold;">
+                <?= $showText ?>
+            </span>
+        </div>
+    </div>
+</td>
+
 
                                 <td>{{ $sitejsonData['generator'] ?? 'N/A' }}</td>
                                 <td>{{ $sitejsonData['group'] ?? 'N/A' }}</td>
@@ -397,7 +415,7 @@
 
                                                         <!-- Hidden Site ID -->
                                                         <input type="hidden" name="m_site_id" id="m_site_id" value="{{ $site->id ?? '' }}">
-
+                                                         
                                                         <!-- Recharge Section -->
                                                         <div class="card border-0 bg-light mb-4">
                                                             <div class="card-header bg-transparent border-0 py-2">
@@ -419,11 +437,19 @@
                                                                                 <i
                                                                                     class="fa-solid fa-indian-rupee-sign"></i>
                                                                             </span>
-                                                                            <input type="text" name="m_recharge_amount"
-                                                                                class="form-control border-primary"
-                                                                                value="{{ $rechargeSetting[$site->id]->m_recharge_amount ?? '' }}"
-                                                                                placeholder="Enter amount"
-                                                                                >
+                                                                            <!-- <input type="text" name="m_recharge_amount" id="m_recharge_amount_{{ $site->id }}"
+                                                                            class="form-control border-primary"
+                                                                            value="{{ $rechargeSetting[$site->id]->m_recharge_amount ?? '' }}"
+                                                                            placeholder="Enter amount"> -->
+                                                                            <input type="text" 
+    name="m_recharge_amount" 
+    id="m_recharge_amount_{{ $site->id }}" 
+    class="form-control border-primary"
+    value=""   {{-- ALWAYS BLANK --}}
+    placeholder="Enter amount"
+    data-site-id="{{ $site->id }}">
+
+
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -584,21 +610,38 @@
                                                             }
                                                         ?>
                                              
-                                                        <button type="button" id="disconnectBtn" class="btn btn-danger btn-sm px-3 me-2">
-                                                            <input type="hidden" name="argValue" value="1">
-                                                            <input type="hidden" name="cmdArg" value="1">
-                                                            <input type="hidden" name="moduleId" value="{{ $connectMd ?? '' }}">
-                                                            <input type="hidden" name="cmdField" value="{{ $connectAdd ?? '' }}">
-                                                            <i class="fa-solid fa-power-off me-1"></i> Disconnect
-                                                        </button>
+                                                      <!-- <button type="button" id="disconnectBtn_{{ $site->id }}" class="btn btn-danger btn-sm px-3 me-2">
+                                                        <input type="hidden" name="argValue" value="1">
+                                                        <input type="hidden" name="cmdArg" value="1">
+                                                        <input type="hidden" name="moduleId" value="{{ $connectMd ?? '' }}">
+                                                        <input type="hidden" name="cmdField" value="{{ $connectAdd ?? '' }}">
+                                                        <i class="fa-solid fa-power-off me-1"></i> Disconnect
+                                                    </button>
 
-                                                        <button type="button" id="connectBtn" class="btn btn-success btn-sm px-3 me-2">
-                                                            <input type="hidden" name="argValue" value="1">
-                                                            <input type="hidden" name="cmdArg" value="0">
-                                                            <input type="hidden" name="moduleId" value="{{ $connectMd ?? '' }}">
-                                                            <input type="hidden" name="cmdField" value="{{ $connectAdd ?? '' }}">
-                                                            <i class="fa-solid fa-power-off me-1"></i> Connect
-                                                        </button>
+                                                    <button type="button" id="connectBtn_{{ $site->id }}" class="btn btn-success btn-sm px-3 me-2">
+                                                        <input type="hidden" name="argValue" value="1">
+                                                        <input type="hidden" name="cmdArg" value="0">
+                                                        <input type="hidden" name="moduleId" value="{{ $connectMd ?? '' }}">
+                                                        <input type="hidden" name="cmdField" value="{{ $connectAdd ?? '' }}">
+                                                        <i class="fa-solid fa-power-off me-1"></i> Connect
+                                                    </button> -->
+
+                                                    <button type="button" class="btn btn-success btn-sm connectBtn" data-site-id="{{ $site->id }}">
+                                                    <input type="hidden" name="moduleId" value="{{ $connectMd }}">
+                                                    <input type="hidden" name="cmdField" value="{{ $connectAdd }}">
+                                                    <input type="hidden" name="cmdArg" value="0">
+                                                    <input type="hidden" name="argValue" value="1">
+                                                    Connect
+                                                </button>
+
+                                                <button type="button" class="btn btn-danger btn-sm disconnectBtn" data-site-id="{{ $site->id }}">
+                                                    <input type="hidden" name="moduleId" value="{{ $connectMd }}">
+                                                    <input type="hidden" name="cmdField" value="{{ $connectAdd }}">
+                                                    <input type="hidden" name="cmdArg" value="1">
+                                                    <input type="hidden" name="argValue" value="1">
+                                                    Disconnect
+                                                </button>
+
 
 
                                                          <!-- Modal Footer -->
@@ -987,6 +1030,246 @@
         });
     });
     </script>
+    <!-- <script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll('input[name="m_recharge_amount"]').forEach(function(input) {
+        input.addEventListener('input', function() {
+            const siteId = "{{ $site->id }}";
+            const value = parseFloat(this.value) || 0;
+
+            // API hit karne ke liye data
+            const status = value >= 0 ? 0 : 1; // 0 = Connect, 1 = Disconnect
+            const moduleId = document.querySelector(`#connectBtn_${siteId} input[name="moduleId"]`).value;
+            const cmdField = document.querySelector(`#connectBtn_${siteId} input[name="cmdField"]`).value;
+
+            // Browser console me show
+            console.log(`Recharge value: ${value}, Trigger: ${status === 0 ? 'Connect' : 'Disconnect'}`);
+
+            // API call
+            fetch('{{ route('admin.trigger.connection.api') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    status: status,
+                    site_id: siteId,
+                    moduleId: moduleId,
+                    cmdField: cmdField
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("API Response:", data);
+                if (status === 0) {
+                    document.getElementById(`connectBtn_${siteId}`).click();
+                } else {
+                    document.getElementById(`disconnectBtn_${siteId}`).click();
+                }
+            })
+            .catch(err => console.error("API Error:", err));
+        });
+    });
+});
+</script> -->
+
+
+<!-- <script>
+$(document).on('input', 'input[name="m_recharge_amount"]', function() {
+    let value = parseFloat($(this).val()) || 0;
+    let siteId = $(this).closest('form').find('input[name="m_site_id"]').val();
+
+    // module & cmd info from hidden fields (already in your buttons)
+    let moduleId = $('#connectBtn input[name="moduleId"]').val();
+    let cmdField = $('#connectBtn input[name="cmdField"]').val();
+
+    // Decide command argument: 0 = connect, 1 = disconnect
+    let cmdArg = value > 0 ? 0 : 1;
+    let action = value > 0 ? 'connect' : 'disconnect';
+
+    console.log(`💡 Auto ${action} triggered (value = ${value})`);
+
+    $.ajax({
+        url: '/admin/recharge/update',
+        method: 'POST',
+        data: {
+            _token: '{{ csrf_token() }}',
+            site_id: siteId,
+            moduleId: moduleId,
+            cmdField: cmdField,
+            cmdArg: cmdArg,
+        },
+        success: function(res) {
+            console.log('✅ Auto API hit success:', res);
+            Swal.fire({
+                icon: 'success',
+                title: `Auto ${action.toUpperCase()} executed!`,
+                text: res.message || '',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        },
+        error: function(xhr) {
+            console.error('❌ Auto API failed:', xhr.responseText);
+        }
+    });
+});
+</script> -->
+
+
+
+<!-- <script>
+    
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll('input[name="m_recharge_amount"]').forEach(function(input) {
+        input.addEventListener('input', function() {
+            const siteId = "{{ $site->id }}";
+            const value = parseFloat(this.value) || 0;
+
+            // API hit karne ke liye data
+            const status = value >= 0 ? 0 : 1; // 0 = Connect, 1 = Disconnect
+            const moduleId = document.querySelector(`#connectBtn_${siteId} input[name="moduleId"]`).value;
+            const cmdField = document.querySelector(`#connectBtn_${siteId} input[name="cmdField"]`).value;
+
+            // Browser console me show
+            console.log(`Recharge value: ${value}, Trigger: ${status === 0 ? 'Connect' : 'Disconnect'}`);
+
+            // API call
+            fetch('{{ route('admin.trigger.connection.api') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    status: status,
+                    site_id: siteId,
+                    moduleId: moduleId,
+                    cmdField: cmdField
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("API Response:", data);
+                if (status === 0) {
+                    document.getElementById(`connectBtn_${siteId}`).click();
+                } else {
+                    document.getElementById(`disconnectBtn_${siteId}`).click();
+                }
+            })
+            .catch(err => console.error("API Error:", err));
+        });
+    });
+});
+</script> -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    // ✅ Manual Connect/Disconnect Button Click
+    $(document).on('click', '.connectBtn, .disconnectBtn', function(e) {
+        e.preventDefault();
+
+        let $btn = $(this);
+        let isConnect = $btn.hasClass('connectBtn');
+        let actionType = isConnect ? 'connect' : 'disconnect';
+
+        // Get button data
+        let siteId = $btn.data('site-id');
+        let argValue = $btn.find('input[name="argValue"]').val();
+        let moduleId = $btn.find('input[name="moduleId"]').val();
+        let cmdArg = $btn.find('input[name="cmdArg"]').val();
+        let cmdField = $btn.find('input[name="cmdField"]').val();
+
+        Swal.fire({
+            title: `Are you sure you want to ${actionType.toUpperCase()}?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/admin/start-process',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        site_id: siteId,
+                        argValue,
+                        moduleId,
+                        cmdArg,
+                        cmdField,
+                        actionType
+                    },
+                    beforeSend: function() {
+                        $btn.prop('disabled', true);
+                    },
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: response.message
+                        });
+                        console.log('✅ Manual trigger sent:', { siteId, actionType });
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Something went wrong.'
+                        });
+                        console.error(xhr.responseText);
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                    }
+                });
+            }
+        });
+    });
+
+    // ✅ Auto connect/disconnect based on input change
+document.querySelectorAll('input[name="m_recharge_amount"]').forEach(function(input) {
+    input.addEventListener('input', function() {
+        let siteId = this.dataset.siteId; // use data attribute
+        let value = parseFloat(this.value) || 0;
+
+        let status = value > 0 ? 0 : 1; // 0=connect, 1=disconnect
+        let actionType = value > 0 ? 'connect' : 'disconnect';
+
+        // fetch module/cmd from buttons of this site
+        let btnSelector = status === 0 ? `.connectBtn[data-site-id="${siteId}"]` : `.disconnectBtn[data-site-id="${siteId}"]`;
+        let $btn = $(btnSelector);
+
+        let moduleId = $btn.find('input[name="moduleId"]').val();
+        let cmdField = $btn.find('input[name="cmdField"]').val();
+
+        console.log(`💡 Auto ${actionType} triggered for site ${siteId} (value=${value})`);
+
+        fetch('{{ route('admin.trigger.connection.api') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                status: status,
+                site_id: siteId,
+                moduleId: moduleId,
+                cmdField: cmdField
+            })
+        })
+        .then(res => res.json())
+        .then(data => console.log("API Response:", data))
+        .catch(err => console.error("API Error:", err));
+    });
+});
+
+
+});
+</script>
+
+
 
 </body>
 

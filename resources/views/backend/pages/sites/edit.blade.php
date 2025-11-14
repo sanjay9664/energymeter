@@ -370,7 +370,7 @@ input {
                                 </div>
 
                                 <div class="col-md-3">
-                                    <div class="card" style="width: 100%; height: 1075px;">
+                                    <div class="card" style="width: 100%; height: 1350px;">
                                         <div class="card-header text-center bg-secondary text-white">
                                             ENGINE PARAMETERS
                                         </div>
@@ -379,7 +379,7 @@ input {
                                             <div class="row">
                                                 <!-- Parameter Section Template -->
                                                 <div class="col text-center fw-bold  p-2 shadow-lg border-0">
-                                                    GRID BALANCE
+                                                    Avg Voltage
                                                    <div class="text-center py-1">
                                                             <i class="fas fa-thermometer-half mb-2 text-primary" style="font-size: 2rem;"></i>
 
@@ -417,6 +417,46 @@ input {
 
                                                 </div>
                                                 <hr />
+                                                <div class="col text-center fw-bold">
+                                                        Grid_Balance
+                                                        <div class="text-center py-1">
+                                                            <i class="fas fa-thermometer-half mb-2 text-primary"
+                                                                style="font-size: 2rem;"></i>
+
+                                                            <div class="row g-2 justify-content-center">
+                                                                <!-- First row (2 inputs) -->
+                                                                <div class="col-auto">
+                                                                    <input type="text" name="grid_balance_md"
+                                                                        class="form-control" style="width: 80px;"
+                                                                        value="{{ old('parameters', $siteData['parameters']['grid_balance']['md'] ?? '') }}"
+                                                                        placeholder="MD">
+                                                                </div>
+                                                                <div class="col-auto">
+                                                                    <input type="text" name="grid_balance_add"
+                                                                        class="form-control" style="width: 80px;"
+                                                                        value="{{ old('parameters', $siteData['parameters']['grid_balance']['add'] ?? '') }}"
+                                                                        placeholder="ADD">
+                                                                </div>
+
+                                                                <!-- Second row (2 inputs) -->
+                                                            <div class="w-100"></div> <!-- Forces new line -->
+                                                                <!-- <div class="col-auto">
+                                                                    <input type="text" name="coolant_temperature_low"
+                                                                        class="form-control" style="width: 80px;"
+                                                                        value="{{ old('parameters', $siteData['parameters']['coolant_temperature']['low'] ?? '') }}"
+                                                                        placeholder="LOW">
+                                                                </div>
+                                                                <div class="col-auto">
+                                                                    <input type="text" name="coolant_temperature_high"
+                                                                        class="form-control" style="width: 80px;"
+                                                                        value="{{ old('parameters', $siteData['parameters']['coolant_temperature']['high'] ?? '') }}"
+                                                                        placeholder="HIGH">
+                                                                </div> -->
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                    <hr />
                                                 <div class="col text-center fw-bold  p-2 shadow-lg border-0">
                                                      GRID UNIT
                                                    <div class="text-center py-1">
@@ -456,6 +496,47 @@ input {
                                                 </div>
                                                 <hr />
                                                 <div class="col text-center fw-bold  p-2 shadow-lg border-0">
+                                                     Avg Current
+                                                   <div class="text-center py-1">
+                                                            <i class="fas fa-tachometer-alt mb-2 text-success" style="font-size: 1rem;"></i>
+
+                                                            <div class="row g-2 justify-content-center">
+                                                                <!-- First row (2 inputs) -->
+                                                                <div class="col-auto">
+                                                                    <input type="text" name="oil_temperature_md"
+                                                                        class="form-control" style="width: 80px;"
+                                                                        value="{{ old('parameters', $siteData['parameters']['oil_temperature']['md'] ?? '') }}"
+                                                                        placeholder="MD">
+                                                                </div>
+                                                                <div class="col-auto">
+                                                                    <input type="text" name="oil_temperature_add"
+                                                                        class="form-control" style="width: 80px;"
+                                                                        value="{{ old('parameters', $siteData['parameters']['oil_temperature']['add'] ?? '') }}"
+                                                                        placeholder="ADD">
+                                                                </div>
+
+                                                                <!-- Second row (2 inputs) -->
+                                                                <div class="w-100"></div> <!-- new line -->
+                                                                <!-- <div class="col-auto">
+                                                                    <input type="text" name="oil_temperature_low"
+                                                                        class="form-control" style="width: 80px;"
+                                                                        value="{{ old('parameters', $siteData['parameters']['oil_temperature']['low'] ?? '') }}"
+                                                                        placeholder="LOW">
+                                                                </div>
+                                                                <div class="col-auto">
+                                                                    <input type="text" name="oil_temperature_high"
+                                                                        class="form-control" style="width: 80px;"
+                                                                        value="{{ old('parameters', $siteData['parameters']['oil_temperature']['high'] ?? '') }}"
+                                                                        placeholder="HIGH">
+                                                                </div> -->
+                                                            </div>
+                                                    </div>
+                                                </div>
+                                                <hr />
+                                                
+                                                
+                                                
+                                                <div class="col text-center fw-bold  p-2 shadow-lg border-0">
                                                     DG UNIT 
                                                     <div class="text-center py-1">
                                                             <i class="fas fa-tachometer-alt mb-2 text-success" style="font-size: 1rem;"></i>
@@ -463,15 +544,15 @@ input {
                                                             <div class="row g-2 justify-content-center">
                                                                 <!-- First row (2 inputs) -->
                                                                 <div class="col-auto">
-                                                                    <input type="text" name="oil_pressure_md"
+                                                                    <input type="text" name="dg_unit_md"
                                                                         class="form-control" style="width: 80px;"
-                                                                        value="{{ old('parameters', $siteData['parameters']['oil_pressure']['md'] ?? '') }}"
+                                                                        value="{{ old('parameters', $siteData['parameters']['dg_unit']['md'] ?? '') }}"
                                                                         placeholder="MD">
                                                                 </div>
                                                                 <div class="col-auto">
-                                                                    <input type="text" name="oil_pressure_add"
+                                                                    <input type="text" name="dg_unit_add"
                                                                         class="form-control" style="width: 80px;"
-                                                                        value="{{ old('parameters', $siteData['parameters']['oil_pressure']['add'] ?? '') }}"
+                                                                        value="{{ old('parameters', $siteData['parameters']['dg_unit']['add'] ?? '') }}"
                                                                         placeholder="ADD">
                                                                 </div>
 
@@ -667,7 +748,6 @@ input {
                                                             </div>
 
                                                         </div>
-                                           
                                         </div>
                                         </div>
                                     </div>
@@ -702,7 +782,7 @@ input {
                                                 <div class="d-flex">
                                                     <input type="text" class="form-control me-2" style="width: 110px;"
                                                         name="voltage_l_l_b_md"
-                                                        value="{{ old('electric_parameters', $siteData['electric_parameters']['voltage_l_l']['b']['add'] ?? '') }}"
+                                                        value="{{ old('electric_parameters', $siteData['electric_parameters']['voltage_l_l']['b']['md'] ?? '') }}"
                                                         placeholder="MD">
                                                     <input type="text" class="form-control" style="width: 110px;"
                                                         name="voltage_l_l_b_add"
@@ -712,7 +792,7 @@ input {
                                                 <div class="d-flex">
                                                     <input type="text" class="form-control me-2" style="width: 110px;"
                                                         name="voltage_l_l_c_md"
-                                                        value="{{ old('electric_parameters', $siteData['electric_parameters']['voltage_l_l']['c']['add'] ?? '') }}"
+                                                        value="{{ old('electric_parameters', $siteData['electric_parameters']['voltage_l_l']['c']['md'] ?? '') }}"
                                                         placeholder="MD">
                                                     <input type="text" class="form-control" style="width: 110px;"
                                                         name="voltage_l_l_c_add"

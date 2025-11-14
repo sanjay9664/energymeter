@@ -60,11 +60,12 @@
                                     <strong>Controller:</strong> {{ $sitejsonData->asset_name }}
                                 </td>
                                 <td data-label="Brand">
-                                    <strong>Grid:</strong> {{ $sitejsonData->brand }}
+                                    <!-- <strong>Grid:</strong> {{ $sitejsonData->brand }} -->
+                                    <strong>Grid:</strong> {{ $rechargeSetting->m_sanction_load}}
                                 </td>
                                 <td data-label="Capacity">
-                                    <strong>Capacity:</strong> {{ $sitejsonData->capacity }}
-                                    <strong>DG:</strong> {{ $sitejsonData->capacity }}
+                                    <!-- <strong>Capacity:</strong> {{ $sitejsonData->capacity }} -->
+                                    <strong>DG:</strong> {{ $rechargeSetting->dg_sanction_load}}
                                 </td>
                             </tr>
 
@@ -181,11 +182,11 @@
                 <!-- Current L1 / oil_pressure -->
                 <td style="width:16%;">
                     <?php
-                    $key = $sitejsonData->parameters->oil_pressure->add;
+                    $key = $sitejsonData->parameters->dg_unit->add;
                     $Dg_Unit = '_';
                     foreach ($eventData as $event) {
                         $eventArray = $event->getArrayCopy();
-                        if ($eventArray['module_id'] == $sitejsonData->parameters->oil_pressure->md) {
+                        if ($eventArray['module_id'] == $sitejsonData->parameters->dg_unit->md) {
                             if (array_key_exists($key, $eventArray)) {
                                 $Dg_Unit = number_format($eventArray[$key], 2);
                             }
@@ -200,7 +201,7 @@
                 </td>
 
                 <!-- Current L2 / oil_temperature -->
-                <td style="width:16%;">
+ <td style="width:16%;">
                     <?php
                         $key = $sitejsonData->readOn->add;
                         $Connection_status = '_';
@@ -213,12 +214,32 @@
                                 break;
                             }
                         }
-                    ?>
-                    <div class="status-box" style="padding:10px; font-size:14px;">
-                        <p><strong>Connection_Status</strong></p>
-                        <span class="status-box">{{ $Connection_status }}</span>
-                    </div>
-                </td>
+
+        // APPLY CONDITION FOR COLOR & TEXT
+        $statusText = "Unknown";
+        $statusColor = "gray";
+
+        if (strtolower($Connection_status) === "high") {
+            $statusText = "Connected";
+            $statusColor = "green";
+        } elseif (strtolower($Connection_status) === "low") {
+            $statusText = "Disconnected";
+            $statusColor = "red";
+        }
+    ?>
+
+    <div class="status-box" style="padding:10px; font-size:14px;">
+        <p><strong>Connection_Status</strong></p>
+
+        <span class="status-box"
+              style="padding:6px 10px; border-radius:5px; 
+                     background:<?= $statusColor ?>; 
+                     color:white; font-weight:bold;">
+            <?= $statusText ?>
+        </span>
+    </div>
+</td>
+
 
                 <!-- Current L3 / number_of_starts -->
                 <td style="width:16%;">
@@ -312,11 +333,11 @@
                                         <div class="parameter-box">
                                             <span class="parameter-label">Avg Current</span>
                                             <?php
-                                                    $key = $sitejsonData->parameters->oil_pressure->add;
+                                                    $key = $sitejsonData->parameters->oil_temperature->add;
                                                     $addValue = '_';
                                                     foreach ($eventData as $event) {
                                                         $eventArray = $event->getArrayCopy();
-                                                        if ($eventArray['module_id'] == $sitejsonData->parameters->oil_pressure->md) {
+                                                        if ($eventArray['module_id'] == $sitejsonData->parameters->oil_temperature->md) {
                                                             if (array_key_exists($key, $eventArray)) {
                                                                 $addValue = number_format($eventArray[$key], 2);
                                                             }
@@ -514,10 +535,10 @@
                                     <strong>Controller:</strong> {{ $sitejsonData->asset_name }}
                                 </td>
                                 <td data-label="Brand">
-                                    <strong>Grid:</strong> {{ $sitejsonData->brand }}
+                                    <strong>Grid:</strong> {{ $rechargeSetting->m_sanction_load}}
                                 </td>
                                 <td data-label="Capacity">
-                                    <strong>DG:</strong> {{ $sitejsonData->capacity }}
+                                    <strong>DG:</strong> {{ $rechargeSetting->dg_sanction_load}}
                                 </td>
                             </tr>
                                                         <tr>
@@ -594,11 +615,11 @@
         <!-- Current L1 / oil_pressure -->
         <td style="width:16%;">
             <?php
-                $key = $sitejsonData->parameters->oil_pressure->add;
+                $key = $sitejsonData->parameters->dg_unit->add;
                 $Dg_Unit = '_';
                 foreach ($eventData as $event) {
                     $eventArray = $event->getArrayCopy();
-                    if ($eventArray['module_id'] == $sitejsonData->parameters->oil_pressure->md) {
+                    if ($eventArray['module_id'] == $sitejsonData->parameters->dg_unit->md) {
                         if (array_key_exists($key, $eventArray)) {
                             $Dg_Unit = number_format($eventArray[$key], 2);
                         }
@@ -614,24 +635,43 @@
 
         <!-- Current L2 / oil_temperature -->
         <td style="width:16%;">
-            <?php
-                $key = $sitejsonData->readOn->add;
-                $Connection_status = '_';
-                foreach ($eventData as $event) {
-                    $eventArray = $event->getArrayCopy();
-                    if ($eventArray['module_id'] == $sitejsonData->readOn->md) {
-                        if (array_key_exists($key, $eventArray)) {
-                            $Connection_status = $eventArray[$key];
+                    <?php
+                        $key = $sitejsonData->readOn->add;
+                        $Connection_status = '_';
+                        foreach ($eventData as $event) {
+                            $eventArray = $event->getArrayCopy();
+                            if ($eventArray['module_id'] == $sitejsonData->readOn->md) {
+                                if (array_key_exists($key, $eventArray)) {
+                                    $Connection_status = $eventArray[$key];
+                                }
+                                break;
+                            }
                         }
-                        break;
-                    }
-                }
-            ?>
-            <div class="status-box" style="padding:10px; font-size:14px;">
-                <p><strong>Connection_Status</strong></p>
-                <span class="status-box">{{ $Connection_status }}</span>
-            </div>
-        </td>
+
+        // APPLY CONDITION FOR COLOR & TEXT
+        $statusText = "Unknown";
+        $statusColor = "gray";
+
+        if (strtolower($Connection_status) === "high") {
+            $statusText = "Connected";
+            $statusColor = "green";
+        } elseif (strtolower($Connection_status) === "low") {
+            $statusText = "Disconnected";
+            $statusColor = "red";
+        }
+    ?>
+
+    <div class="status-box" style="padding:10px; font-size:14px;">
+        <p><strong>Connection_Status</strong></p>
+
+        <span class="status-box"
+              style="padding:6px 10px; border-radius:5px; 
+                     background:<?= $statusColor ?>; 
+                     color:white; font-weight:bold;">
+            <?= $statusText ?>
+        </span>
+    </div>
+</td>
 
         <!-- Current L3 / number_of_starts -->
             <td style="width:16%;">
@@ -731,11 +771,11 @@
                                                                     <div class="parameter-box">
                                                     <span class="parameter-label">Avg Current</span>
                                                     <?php
-                                                        $key = $sitejsonData->parameters->oil_pressure->add;
+                                                        $key = $sitejsonData->parameters->oil_temperature->add;
                                                         $addValue = '_';
                                                         foreach ($eventData as $event) {
                                                             $eventArray = $event->getArrayCopy();
-                                                            if ($eventArray['module_id'] == $sitejsonData->parameters->oil_pressure->md) {
+                                                            if ($eventArray['module_id'] == $sitejsonData->parameters->oil_temperature->md) {
                                                                 if (array_key_exists($key, $eventArray)) {
                                                                     $addValue = number_format($eventArray[$key], 2);
                                                                 }

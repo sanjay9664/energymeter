@@ -87,7 +87,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
 
     Route::delete('/delete-device-events/{deviceId}', [SiteController::class, 'apiDeleteDevice']);
 
+
     Route::get('/recharge-settings/{site_id?}', [RechargeSettingsController::class, 'index'])->name('recharge-settings.index');
     Route::post('/recharge-settings/store', [SiteController::class, 'storeRechargeSettings'])->name('recharge.store');
     
+    Route::post('/trigger-connection-api', [SiteController::class, 'triggerConnectionApi'])->name('trigger.connection.api');
+
+
+
 })->middleware('auth:admin');
