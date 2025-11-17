@@ -18,6 +18,7 @@ class RechargeSetting extends Model
     'dg_unit_charge',
     'dg_sanction_load',
     'kwh',
+    'last_kwh_time',
 ];
 
 }
