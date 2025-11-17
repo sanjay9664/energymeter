@@ -9,15 +9,17 @@ class RechargeSetting extends Model
     use HasFactory;
 
     protected $fillable = [
-        'm_site_id',
-        'm_recharge_amount', 
-        'm_fixed_charge', 
-        'm_unit_charge', 
-        'm_sanction_load',
-        'dg_fixed_charge', 
-        'dg_unit_charge', 
-        'dg_sanction_load',
-    ];
+    'm_site_id',
+    'm_recharge_amount',
+    'm_fixed_charge',
+    'm_unit_charge',
+    'm_sanction_load',
+    'dg_fixed_charge',
+    'dg_unit_charge',
+    'dg_sanction_load',
+    'kwh',
+];
+
 }
 class PriviousTotalKwh extends Model
 {

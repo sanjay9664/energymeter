@@ -1163,15 +1163,17 @@ public function storeRechargeSettings(Request $request)
 {
     try {
         $validated = $request->validate([
-            'm_site_id' => 'required|integer|exists:sites,id',
-            'm_recharge_amount' => 'nullable|numeric',
-            'm_fixed_charge' => 'nullable|numeric',
-            'm_unit_charge' => 'nullable|numeric',
-            'm_sanction_load' => 'nullable|numeric',
-            'dg_fixed_charge' => 'nullable|numeric',
-            'dg_unit_charge' => 'nullable|numeric',
-            'dg_sanction_load' => 'nullable|numeric',
-        ]);
+    'm_site_id' => 'required|integer|exists:sites,id',
+    'm_recharge_amount' => 'nullable|numeric',
+    'm_fixed_charge' => 'nullable|numeric',
+    'm_unit_charge' => 'nullable|numeric',
+    'm_sanction_load' => 'nullable|numeric',
+    'dg_fixed_charge' => 'nullable|numeric',
+    'dg_unit_charge' => 'nullable|numeric',
+    'dg_sanction_load' => 'nullable|numeric',
+    'kwh' => 'nullable|numeric', // ⬅️ NEW
+]);
+
 
         $siteId = $validated['m_site_id'];
         $deltaAmount = $validated['m_recharge_amount'] ?? 0; // jo user input kare (add/subtract)
@@ -1183,15 +1185,17 @@ public function storeRechargeSettings(Request $request)
             $oldAmount = $existing->m_recharge_amount ?? 0;
             $updatedAmount = $oldAmount + $deltaAmount; // Allow negative result also
 
-            $existing->update([
-                'm_recharge_amount' => $updatedAmount,
-                'm_fixed_charge' => $validated['m_fixed_charge'] ?? $existing->m_fixed_charge,
-                'm_unit_charge' => $validated['m_unit_charge'] ?? $existing->m_unit_charge,
-                'm_sanction_load' => $validated['m_sanction_load'] ?? $existing->m_sanction_load,
-                'dg_fixed_charge' => $validated['dg_fixed_charge'] ?? $existing->dg_fixed_charge,
-                'dg_unit_charge' => $validated['dg_unit_charge'] ?? $existing->dg_unit_charge,
-                'dg_sanction_load' => $validated['dg_sanction_load'] ?? $existing->dg_sanction_load,
-            ]);
+           $existing->update([
+    'm_recharge_amount' => $updatedAmount,
+    'm_fixed_charge' => $validated['m_fixed_charge'] ?? $existing->m_fixed_charge,
+    'm_unit_charge' => $validated['m_unit_charge'] ?? $existing->m_unit_charge,
+    'm_sanction_load' => $validated['m_sanction_load'] ?? $existing->m_sanction_load,
+    'dg_fixed_charge' => $validated['dg_fixed_charge'] ?? $existing->dg_fixed_charge,
+    'dg_unit_charge' => $validated['dg_unit_charge'] ?? $existing->dg_unit_charge,
+    'dg_sanction_load' => $validated['dg_sanction_load'] ?? $existing->dg_sanction_load,
+    'kwh' => $validated['kwh'] ?? $existing->kwh, // ⬅️ NEW
+]);
+
         } 
         else {
             // No record yet → just create
