@@ -26,9 +26,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('sync:frontend-data')->everyFiveMinutes();
         $schedule->command('sync:mongodb')->everyFiveMinutes();
-        // $schedule->command('charge:deduct-daily')->everyTenMinutes();
-        // $schedule->command('charge:deduct-daily')->everyMinute();
-        $schedule->command('charge:deduct-daily')->everyFiveMinutes();
+        $schedule->command('charge:deduct-daily')->everyTenMinutes();
 
     }
 

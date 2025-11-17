@@ -319,7 +319,6 @@ class SiteController extends Controller
         return redirect()->route('admin.sites.index');
     }
 
-
     public function edit(int $id): Renderable
     {
         $this->checkAuthorization(auth()->user(), ['site.edit']);
@@ -1157,194 +1156,107 @@ class SiteController extends Controller
         }
     }
 
- 
-
-public function storeRechargeSettings(Request $request)
-{
-    try {
-        $validated = $request->validate([
-    'm_site_id' => 'required|integer|exists:sites,id',
-    'm_recharge_amount' => 'nullable|numeric',
-    'm_fixed_charge' => 'nullable|numeric',
-    'm_unit_charge' => 'nullable|numeric',
-    'm_sanction_load' => 'nullable|numeric',
-    'dg_fixed_charge' => 'nullable|numeric',
-    'dg_unit_charge' => 'nullable|numeric',
-    'dg_sanction_load' => 'nullable|numeric',
-    'kwh' => 'nullable|numeric', // ⬅️ NEW
-]);
+    public function storeRechargeSettings(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'm_site_id' => 'required|integer|exists:sites,id',
+                'm_recharge_amount' => 'nullable|numeric',
+                'm_fixed_charge' => 'nullable|numeric',
+                'm_unit_charge' => 'nullable|numeric',
+                'm_sanction_load' => 'nullable|numeric',
+                'dg_fixed_charge' => 'nullable|numeric',
+                'dg_unit_charge' => 'nullable|numeric',
+                'dg_sanction_load' => 'nullable|numeric',
+                'kwh' => 'nullable|numeric', // ⬅️ NEW
+            ]);
 
 
-        $siteId = $validated['m_site_id'];
-        $deltaAmount = $validated['m_recharge_amount'] ?? 0; // jo user input kare (add/subtract)
+            $siteId = $validated['m_site_id'];
+            $deltaAmount = $validated['m_recharge_amount'] ?? 0; // jo user input kare (add/subtract)
 
-        // 🔹 Get existing record (if any)
-        $existing = RechargeSetting::where('m_site_id', $siteId)->first();
+            // 🔹 Get existing record (if any)
+            $existing = RechargeSetting::where('m_site_id', $siteId)->first();
 
-        if ($existing) {
-            $oldAmount = $existing->m_recharge_amount ?? 0;
-            $updatedAmount = $oldAmount + $deltaAmount; // Allow negative result also
+            if ($existing) {
+                $oldAmount = $existing->m_recharge_amount ?? 0;
+                $updatedAmount = $oldAmount + $deltaAmount; // Allow negative result also
 
-           $existing->update([
-    'm_recharge_amount' => $updatedAmount,
-    'm_fixed_charge' => $validated['m_fixed_charge'] ?? $existing->m_fixed_charge,
-    'm_unit_charge' => $validated['m_unit_charge'] ?? $existing->m_unit_charge,
-    'm_sanction_load' => $validated['m_sanction_load'] ?? $existing->m_sanction_load,
-    'dg_fixed_charge' => $validated['dg_fixed_charge'] ?? $existing->dg_fixed_charge,
-    'dg_unit_charge' => $validated['dg_unit_charge'] ?? $existing->dg_unit_charge,
-    'dg_sanction_load' => $validated['dg_sanction_load'] ?? $existing->dg_sanction_load,
-    'kwh' => $validated['kwh'] ?? $existing->kwh, // ⬅️ NEW
-]);
+                $existing->update([
+                    'm_recharge_amount' => $updatedAmount,
+                    'm_fixed_charge' => $validated['m_fixed_charge'] ?? $existing->m_fixed_charge,
+                    'm_unit_charge' => $validated['m_unit_charge'] ?? $existing->m_unit_charge,
+                    'm_sanction_load' => $validated['m_sanction_load'] ?? $existing->m_sanction_load,
+                    'dg_fixed_charge' => $validated['dg_fixed_charge'] ?? $existing->dg_fixed_charge,
+                    'dg_unit_charge' => $validated['dg_unit_charge'] ?? $existing->dg_unit_charge,
+                    'dg_sanction_load' => $validated['dg_sanction_load'] ?? $existing->dg_sanction_load,
+                    'kwh' => $validated['kwh'] ?? $existing->kwh, // ⬅️ NEW
+                ]);
 
+            } 
+            else {
+                // No record yet → just create
+                RechargeSetting::create($validated);
+            }
+
+            return back()->with('success', 'Recharge balance updated successfully!');
         } 
-        else {
-            // No record yet → just create
-            RechargeSetting::create($validated);
+        catch (\Illuminate\Validation\ValidationException $e) {
+            return back()
+                ->withErrors($e->validator)
+                ->withInput()
+                ->with('error', 'Please correct the highlighted errors.');
+        } 
+        catch (\Exception $e) {
+            return back()
+                ->with('error', 'Unexpected error: ' . $e->getMessage())
+                ->withInput();
         }
-
-        return back()->with('success', 'Recharge balance updated successfully!');
-    } 
-    catch (\Illuminate\Validation\ValidationException $e) {
-        return back()
-            ->withErrors($e->validator)
-            ->withInput()
-            ->with('error', 'Please correct the highlighted errors.');
-    } 
-    catch (\Exception $e) {
-        return back()
-            ->with('error', 'Unexpected error: ' . $e->getMessage())
-            ->withInput();
     }
-}
 
-// public function storeRechargeSettings(Request $request)
-// {
-//     $request->validate([
-//         'site_id'           => 'required|integer',
-//         'm_recharge_amount' => 'nullable|numeric',
-//         'm_fixed_charge'    => 'nullable|numeric',
-//         'm_unit_charge'     => 'nullable|numeric',
-//         'm_sanction_load'   => 'nullable|numeric',
-//         'dg_fixed_charge'   => 'nullable|numeric',
-//         'dg_unit_charge'    => 'nullable|numeric',
-//         'dg_sanction_load'  => 'nullable|numeric',
-//     ]);
-
-//     $siteId = $request->site_id;
-
-//     // Check existing record
-//     $existing = DB::table('privious_total_kWh')
-//     ->where('m_site_id', $siteId)
-//     ->first();
-
-
-//     // Insert or Update
-//     $data = [
-//         'm_site_id'        => $siteId,
-//         'm_recharge_amount'=> $request->m_recharge_amount,
-//         'm_fixed_charge'   => $request->m_fixed_charge,
-//         'm_unit_charge'    => $request->m_unit_charge,
-//         'm_sanction_load'  => $request->m_sanction_load,
-//         'dg_fixed_charge'  => $request->dg_fixed_charge,
-//         'dg_unit_charge'   => $request->dg_unit_charge,
-//         'dg_sanction_load' => $request->dg_sanction_load,
-//         'updated_at'       => now()
-//     ];
-
-//     if ($existing) {
-//         // Update karo
-//         DB::table('privious_total_kWh')
-//             ->where('m_site_id', $siteId)
-//             ->update($data);
-//     } else {
-//         // Insert karo
-//         $data['created_at'] = now();
-//         DB::table('privious_total_kWh')->insert($data);
-//     }
-
-//     return back()->with('success', 'Recharge settings saved successfully!');
-// }
-
-
-
-
-
-// public function triggerConnectionApi(Request $request)
-// {
-//     $request->validate([
-//         'status' => 'required|in:0,1', // 0 = Connect, 1 = Disconnect
-//         'site_id' => 'required|integer'
-//     ]);
-
-//     try {
-//         $payload = [
-//             'argValue' => 1,
-//             'cmdArg' => $request->status,
-//             'moduleId' => $request->moduleId ?? '',
-//             'cmdField' => $request->cmdField ?? '',
-//         ];
-
-//         $response = Http::post('http://app.sochiot.com:8082/api/config-engine/device/command/push/remote', $payload);
-
-//         if ($response->successful()) {
-//             return response()->json(['success' => true, 'message' => 'API triggered successfully']);
-//         } else {
-//             return response()->json(['success' => false, 'message' => 'API failed', 'data' => $response->body()]);
-//         }
-//     } catch (\Exception $e) {
-//         return response()->json(['success' => false, 'message' => $e->getMessage()]);
-//     }
-// }
-
-
-public function triggerConnectionApi(Request $request)
-{
-    $request->validate([
-        'status' => 'required|in:0,1',
-        'site_id' => 'required|integer',
-        'moduleId' => 'nullable|string',
-        'cmdField' => 'nullable|string',
-    ]);
-
-    try {
-        $siteId = $request->site_id;
-        $status = $request->status;
-
-        // Fetch recharge settings
-        $recharge = RechargeSetting::where('m_site_id', $siteId)->first();
-
-        if(!$recharge) {
-            return response()->json(['success'=>false,'message'=>'Recharge data not found']);
-        }
-
-        // Update recharge amount logic (auto deduct/add)
-        if($status == 1) { // Disconnect
-            $recharge->m_recharge_amount = $recharge->m_recharge_amount - 0; // or any logic
-        }
-
-        $recharge->save();
-
-        // Trigger remote API
-        $payload = [
-            'argValue' => 1,
-            'cmdArg'   => $status,
-            'moduleId' => $request->moduleId ?? '',
-            'cmdField' => $request->cmdField ?? '',
-        ];
-        $response = Http::post('http://app.sochiot.com:8082/api/config-engine/device/command/push/remote', $payload);
-
-        return response()->json([
-            'success' => $response->successful(),
-            'message' => $response->successful() ? 'Command executed' : 'API failed',
-            'recharge_amount' => $recharge->m_recharge_amount
+    public function triggerConnectionApi(Request $request)
+    {
+        $request->validate([
+            'status' => 'required|in:0,1',
+            'site_id' => 'required|integer',
+            'moduleId' => 'nullable|string',
+            'cmdField' => 'nullable|string',
         ]);
-    } catch(\Exception $e) {
-        return response()->json(['success'=>false,'message'=>$e->getMessage()]);
+
+        try {
+            $siteId = $request->site_id;
+            $status = $request->status;
+
+            // Fetch recharge settings
+            $recharge = RechargeSetting::where('m_site_id', $siteId)->first();
+
+            if(!$recharge) {
+                return response()->json(['success'=>false,'message'=>'Recharge data not found']);
+            }
+
+            // Update recharge amount logic (auto deduct/add)
+            if($status == 1) { // Disconnect
+                $recharge->m_recharge_amount = $recharge->m_recharge_amount - 0; // or any logic
+            }
+
+            $recharge->save();
+
+            // Trigger remote API
+            $payload = [
+                'argValue' => 1,
+                'cmdArg'   => $status,
+                'moduleId' => $request->moduleId ?? '',
+                'cmdField' => $request->cmdField ?? '',
+            ];
+            $response = Http::post('http://app.sochiot.com:8082/api/config-engine/device/command/push/remote', $payload);
+
+            return response()->json([
+                'success' => $response->successful(),
+                'message' => $response->successful() ? 'Command executed' : 'API failed',
+                'recharge_amount' => $recharge->m_recharge_amount
+            ]);
+        } catch(\Exception $e) {
+            return response()->json(['success'=>false,'message'=>$e->getMessage()]);
+        }
     }
-}
-
-
-
-
-
 }

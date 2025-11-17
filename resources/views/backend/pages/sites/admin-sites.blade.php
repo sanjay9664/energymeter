@@ -350,33 +350,18 @@
                                         $hours=floor($totalMinutes / 60); $minutes=$totalMinutes % 60; @endphp {{ $hours }} hrs
                                         {{ $minutes }} mins </td> -->
 
+                               
                                 <?php
-                                    $readOn = isset($sitejsonData['total_kwh']) ? floatval($sitejsonData['total_kwh']) : 0;
-                                    $fuelMd = $sitejsonData['total_kwh']['md'] ?? null;
-                                    $fuelKey = $sitejsonData['total_kwh']['add'] ?? null;
-                                    $addValue = 0;
-
-                                    foreach ($eventData as $event) {
-                                        $eventArray = $event instanceof \ArrayObject ? $event->getArrayCopy() : (array) $event;
-
-                                        if ($fuelMd && isset($eventArray['module_id']) && $eventArray['module_id'] == $fuelMd) {
-                                            if ($fuelKey && array_key_exists($fuelKey, $eventArray)) {
-                                                $addkwhValue = $eventArray[$fuelKey];
-                                            }
-                                            break;
-                                        }
-                                    }
-                                    // dd($addValue);
+                                    $setting = $rechargeSetting->where('m_site_id', $site->id)->first();
                                 ?>
-                                <td>{{ $addkwhValue }}</td>
-                                <!-- <td>{{ $rechargeSetting[$site->id]->m_recharge_amount ?? '' }}</td> -->
+
+                                <td>{{ $setting->kwh ?? '-' }}</td>
+
                                  <td class="rechargeStatus"
-    data-site-id="{{ $site->id }}"
-    data-amount="{{ $rechargeSetting[$site->id]->m_recharge_amount ?? 0 }}">
-    {{ $rechargeSetting[$site->id]->m_recharge_amount ?? 0 }}
-</td>
-
-
+                                    data-site-id="{{ $site->id }}"
+                                    data-amount="{{ $rechargeSetting[$site->id]->m_recharge_amount ?? 0 }}">
+                                    {{ $rechargeSetting[$site->id]->m_recharge_amount ?? 0 }}
+                                </td>
 
                                 <td class="status-cell">
                                     <div class="status-dot controller-dot"></div>
