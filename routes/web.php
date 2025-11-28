@@ -81,16 +81,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
     
     // Fetch DG Status
     Route::post('/site/statuses', [SiteController::class, 'fetchStatuses'])->name('site.statuses');
-
     // For Start, Stop, Manual
     Route::post('/start-process', [SiteController::class, 'startProcess']);
-
     Route::delete('/delete-device-events/{deviceId}', [SiteController::class, 'apiDeleteDevice']);
-
-
     Route::get('/recharge-settings/{site_id?}', [RechargeSettingsController::class, 'index'])->name('recharge-settings.index');
     Route::post('/recharge-settings/store', [SiteController::class, 'storeRechargeSettings'])->name('recharge.store');
-    
     Route::post('/trigger-connection-api', [SiteController::class, 'triggerConnectionApi'])->name('trigger.connection.api');
 
 
@@ -98,8 +93,13 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
     Route::get('/energy-consumption', [SiteController::class, 'energyConsumptionDashboard'])->name('energy.consumption');
     Route::get('/energy-data', [SiteController::class, 'getEnergyData'])->name('energy.data');
     Route::get('/energy-stats', [SiteController::class, 'getEnergyStats'])->name('energy.stats');
-
     Route::post('/recharge-settings/update-status', [RechargeSettingsController::class, 'updateStatus']);
+    
+    Route::post('/admin/download-report', [SiteController::class, 'downloadReport'])->name('download.report');
+    Route::get('/admin/energy-data', [SiteController::class, 'getEnergyConsumptionData'])->name('energy.data');
+    Route::get('/admin/energy-dashboard-stats', [SiteController::class, 'getEnergyDashboardStats'])->name('energy.dashboard.stats');
+
+     
 
 })->middleware('auth:admin');
 

@@ -29,6 +29,10 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use GuzzleHttp\Psr7\Request as GuzzleRequest;
 use Auth, DB, Validator;
+use App\Models\EnergyConsumption;  // ✅ YEH LINE ADD KAREIN
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx; 
+use App\Models\Recharge;
 
 class SiteController extends Controller
 {
@@ -1218,6 +1222,74 @@ class SiteController extends Controller
         }
     }
 
+//  public function storeRechargeSettings(Request $request)
+// {
+//     try {
+//         $validated = $request->validate([
+//             'm_site_id' => 'required|integer|exists:sites,id',
+//             'm_recharge_amount' => 'nullable|numeric',
+//             'm_fixed_charge' => 'nullable|numeric',
+//             'm_unit_charge' => 'nullable|numeric',
+//             'm_sanction_load' => 'nullable|numeric',
+//             'dg_fixed_charge' => 'nullable|numeric',
+//             'dg_unit_charge' => 'nullable|numeric',
+//             'dg_sanction_load' => 'nullable|numeric',
+//             'kwh' => 'nullable|numeric',
+//         ]);
+
+//         $siteId = $validated['m_site_id'];
+//         $deltaAmount = $validated['m_recharge_amount'] ?? 0;
+
+//         // Fetch existing recharge setting
+//         $existing = RechargeSetting::where('m_site_id', $siteId)->first();
+
+//         if ($existing) {
+//             $oldAmount = $existing->m_recharge_amount ?? 0;
+//             $updatedAmount = $oldAmount + $deltaAmount;
+
+//             $existing->update([
+//                 'm_recharge_amount' => $updatedAmount,
+//                 'm_fixed_charge' => $validated['m_fixed_charge'] ?? $existing->m_fixed_charge,
+//                 'm_unit_charge' => $validated['m_unit_charge'] ?? $existing->m_unit_charge,
+//                 'm_sanction_load' => $validated['m_sanction_load'] ?? $existing->m_sanction_load,
+//                 'dg_fixed_charge' => $validated['dg_fixed_charge'] ?? $existing->dg_fixed_charge,
+//                 'dg_unit_charge' => $validated['dg_unit_charge'] ?? $existing->dg_unit_charge,
+//                 'dg_sanction_load' => $validated['dg_sanction_load'] ?? $existing->dg_sanction_load,
+//                 'kwh' => $validated['kwh'] ?? $existing->kwh,
+//             ]);
+//         } else {
+//             // Create new setting
+//             RechargeSetting::create($validated);
+//         }
+
+//         /**
+//          * ----------------------------------------
+//          * INSERT INTO "recharges" TABLE
+//          * ----------------------------------------
+//          */
+//         Recharge::create([
+//             'site_id' => $siteId,
+//             'recharge_id' => uniqid('RCG-'),  // unique recharge reference
+//             'recharge_amount' => $deltaAmount,
+//         ]);
+
+//         return back()->with('success', 'Recharge updated & recharge entry added!');
+//     }
+
+//     catch (\Illuminate\Validation\ValidationException $e) {
+//         return back()
+//             ->withErrors($e->validator)
+//             ->withInput()
+//             ->with('error', 'Please correct the errors.');
+//     }
+
+//     catch (\Exception $e) {
+//         return back()
+//             ->with('error', 'Unexpected error: ' . $e->getMessage())
+//             ->withInput();
+//     }
+// }
+
     public function triggerConnectionApi(Request $request)
     {
         $request->validate([
@@ -1264,113 +1336,6 @@ class SiteController extends Controller
         }
     }
 
-    // public function siteDetails($siteId)
-    // {
-    //     $siteData = Site::findOrFail($siteId);
-    //     $sitejsonData = json_decode($siteData->json_data, true);
-    //     $events = Event::where('site_id', $siteId)->get();
-        
-    //     // Get deduction history for this site
-    //     $deductionHistory = DeductionHistory::where('site_id', $siteId)->get();
-        
-    //     // Calculate statistics - FIXED: This line was missing
-    //     $energyStats = $this->calculateEnergyStats($deductionHistory);
-        
-    //     // Get latest record
-    //     $latestRecord = $deductionHistory->sortByDesc('created_at')->first();
-    //     $latestCreatedAtFormatted = $latestRecord ? $latestRecord->created_at->format('M d, Y H:i') : 'No data';
-        
-    //     $rechargeSetting = RechargeSetting::where('site_id', $siteId)->first();
-
-    //     // Check if user is admin (you might need to adjust this based on your auth system)
-    //     $role = auth()->user()->role ?? 'user'; // Adjust based on your authentication
-
-    //     if ($role == 'admin') {
-    //         return view('backend.pages.sites.site-details', [
-    //             'siteData' => $siteData,
-    //             'sitejsonData' => $sitejsonData,
-    //             'eventData' => $events,
-    //             'latestCreatedAt' => $latestCreatedAtFormatted,
-    //             'rechargeSetting' => $rechargeSetting,
-    //             'deductionHistory' => $deductionHistory,
-    //             'energyStats' => $energyStats, // Make sure this line is present
-    //         ]);
-    //     }
-
-    //     // Add a return statement for non-admin users if needed
-    //     return redirect()->back()->with('error', 'Access denied');
-    // }
-
-    // private function calculateEnergyStats($deductionHistory)
-    // {
-    //     if ($deductionHistory->isEmpty()) {
-    //         return [
-    //             'total_units' => 0,
-    //             'total_amount' => 0,
-    //             'avg_units' => 0,
-    //             'avg_amount' => 0,
-    //             'max_units' => 0,
-    //             'max_amount' => 0,
-    //             'current_units' => 0,
-    //             'current_amount' => 0,
-    //         ];
-    //     }
-
-    //     $totalUnits = $deductionHistory->sum('units');
-    //     $totalAmount = $deductionHistory->sum('amount');
-    //     $count = $deductionHistory->count();
-        
-    //     $latestRecord = $deductionHistory->sortByDesc('created_at')->first();
-
-    //     return [
-    //         'total_units' => $totalUnits,
-    //         'total_amount' => $totalAmount,
-    //         'avg_units' => $count > 0 ? $totalUnits / $count : 0,
-    //         'avg_amount' => $count > 0 ? $totalAmount / $count : 0,
-    //         'max_units' => $deductionHistory->max('units'),
-    //         'max_amount' => $deductionHistory->max('amount'),
-    //         'current_units' => $latestRecord ? $latestRecord->units : 0,
-    //         'current_amount' => $latestRecord ? $latestRecord->amount : 0,
-    //     ];
-    // }
-
-
-    // public function getFilteredEnergyData(Request $request)
-    // {
-    //     $siteId = $request->input('site_id');
-    //     $month = $request->input('month');
-    //     $year = $request->input('year');
-    //     $type = $request->input('type'); // daily/monthly
-        
-    //     $query = DeductionHistory::where('site_id', $siteId);
-        
-    //     if ($month !== null && $year !== null) {
-    //         $query->whereYear('created_at', $year)
-    //               ->whereMonth('created_at', $month + 1); // JavaScript months are 0-indexed
-    //     }
-        
-    //     if ($type === 'daily') {
-    //         $data = $query->selectRaw('DATE(created_at) as date, SUM(units) as total_units, SUM(amount) as total_amount')
-    //                      ->groupBy('date')
-    //                      ->orderBy('date')
-    //                      ->get();
-    //     } else {
-    //         $data = $query->selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, SUM(units) as total_units, SUM(amount) as total_amount')
-    //                      ->groupBy('year', 'month')
-    //                      ->orderBy('year')
-    //                      ->orderBy('month')
-    //                      ->get();
-    //     }
-        
-    //     // Calculate stats for the filtered data
-    //     $filteredStats = $this->calculateEnergyStats($query->get());
-        
-    //     return response()->json([
-    //         'success' => true,
-    //         'data' => $data,
-    //         'stats' => $filteredStats
-    //     ]);
-    // }
 
 
     public function energyConsumptionDashboard()
@@ -1379,9 +1344,7 @@ class SiteController extends Controller
         return view('backend.energy-dashboard', compact('sites'));
     }
 
-    /**
-     * Energy data fetch for charts
-     */
+    
     public function getEnergyData(Request $request)
     {
         try {
@@ -1505,6 +1468,413 @@ class SiteController extends Controller
                 'message' => 'Error fetching stats: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+
+
+
+
+    // Report generate the function  
+// **********************************************************************************************
+    public function downloadReport(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|in:excel,pdf',
+            'report_type' => 'required|in:daily,monthly,complete',
+            'month' => 'sometimes|integer|min:1|max:12',
+            'year' => 'sometimes|integer|min:2020|max:2030'
+        ]);
+
+        $reportType = $request->report_type;
+        $format = $request->type;
+        $filters = $request->only(['month', 'year']);
+
+        try {
+            if ($format === 'excel') {
+                return $this->downloadExcelReport($reportType, $filters);
+            } else {
+                return $this->downloadPdfReport($reportType, $filters);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating report: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // ✅ CORRECTED: Energy Data Method
+    public function getEnergyConsumptionData(Request $request)
+    {
+        $type = $request->get('type', 'daily');
+        $month = $request->get('month', date('m'));
+        $year = $request->get('year', date('Y'));
+
+        try {
+            if ($type === 'daily') {
+                $data = EnergyConsumption::whereYear('date', $year)
+                    ->whereMonth('date', $month)
+                    ->orderBy('date')
+                    ->get()
+                    ->map(function ($item) {
+                        return [
+                            'day' => $item->date->day,
+                            'total_units' => $item->unit_consumed,
+                            'total_amount' => $item->unit_consumed * 10
+                        ];
+                    });
+            } else {
+                $data = EnergyConsumption::whereYear('date', $year)
+                    ->selectRaw('MONTH(date) as month, SUM(unit_consumed) as total_units, SUM(unit_consumed * 10) as total_amount')
+                    ->groupBy('month')
+                    ->orderBy('month')
+                    ->get();
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // ✅ CORRECTED: Dashboard Stats Method
+    public function getEnergyDashboardStats(Request $request)
+    {
+        try {
+            $currentMonth = date('m');
+            $currentYear = date('Y');
+            $lastMonth = $currentMonth == 1 ? 12 : $currentMonth - 1;
+            $lastYear = $currentMonth == 1 ? $currentYear - 1 : $currentYear;
+
+            // Current month data
+            $currentData = EnergyConsumption::whereYear('date', $currentYear)
+                ->whereMonth('date', $currentMonth)
+                ->get();
+
+            // Last month data  
+            $lastData = EnergyConsumption::whereYear('date', $lastYear)
+                ->whereMonth('date', $lastMonth)
+                ->get();
+
+            $currentStats = [
+                'avg_units' => $currentData->avg('unit_consumed') ?? 0,
+                'max_units' => $currentData->max('unit_consumed') ?? 0,
+                'avg_amount' => ($currentData->avg('unit_consumed') ?? 0) * 10,
+                'max_amount' => ($currentData->max('unit_consumed') ?? 0) * 10,
+                'total_units' => $currentData->sum('unit_consumed'),
+                'total_amount' => $currentData->sum('unit_consumed') * 10
+            ];
+
+            $lastStats = [
+                'avg_units' => $lastData->avg('unit_consumed') ?? 0,
+                'max_units' => $lastData->max('unit_consumed') ?? 0,
+                'avg_amount' => ($lastData->avg('unit_consumed') ?? 0) * 10,
+                'max_amount' => ($lastData->max('unit_consumed') ?? 0) * 10
+            ];
+
+            return response()->json([
+                'success' => true,
+                'current_month' => $currentStats,
+                'last_month' => $lastStats
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching stats: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Your existing private methods...
+    private function downloadExcelReport($reportType, $filters)
+    {
+        $data = $this->getReportData($reportType, $filters);
+    $summary = $this->getSummaryData($data);
+    
+    // ✅ TEMPORARY DEBUGGING
+    \Log::info('=== EXCEL REPORT DEBUG ===');
+    \Log::info('Report Type: ' . $reportType);
+    \Log::info('Filters: ', $filters);
+    \Log::info('Data Count: ' . count($data));
+    \Log::info('First Data Item: ', $data[0] ?? []);
+    \Log::info('Summary: ', $summary);
+    
+    $fileName = "Energy_Report_{$reportType}_" . date('Y-m-d') . ".xlsx";
+
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+    
+    // Set title
+    $sheet->setCellValue('A1', 'Energy Consumption Report');
+    $sheet->mergeCells('A1:G1');
+    $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
+    $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
+    
+    // Subtitle
+    $sheet->setCellValue('A2', ucfirst($reportType) . ' Report - Generated on: ' . date('d-m-Y H:i:s'));
+    $sheet->mergeCells('A2:G2');
+    $sheet->getStyle('A2')->getFont()->setSize(10);
+    $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
+    
+    // Headers
+    $headers = ['Sr.No', 'Date', 'Unit Consumed (kWh)', 'Amount (Rs.)', 'Balance (Rs.)', 'Recharge (Rs.)', 'Remarks'];
+    $sheet->fromArray($headers, null, 'A4');
+    
+    // ✅ DEBUG: Check data before adding to sheet
+    \Log::info('Adding data to Excel. Total rows: ' . count($data));
+    
+    // Data
+    $row = 5;
+    foreach ($data as $index => $item) {
+        \Log::info('Row ' . $row . ' Data: ', $item);
+        
+        $sheet->setCellValue('A' . $row, $index + 1);
+        $sheet->setCellValue('B' . $row, $item['date'] ?? '');
+        $sheet->setCellValue('C' . $row, $item['unit_consumed'] ?? 0);
+        $sheet->setCellValue('D' . $row, $item['amount'] ?? 0);
+        $sheet->setCellValue('E' . $row, $item['balance'] ?? 0);
+        $sheet->setCellValue('F' . $row, $item['recharge'] ?? 0);
+        $sheet->setCellValue('G' . $row, $item['remarks'] ?? '');
+        $row++;
+    }
+        
+        // Summary
+        $row += 2;
+        $sheet->setCellValue('A' . $row, 'SUMMARY');
+        $sheet->mergeCells('A' . $row . ':G' . $row);
+        $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(14);
+        
+        $row++;
+        $sheet->setCellValue('A' . $row, 'Current Balance');
+        $sheet->setCellValue('E' . $row, $summary['current_balance']);
+        
+        $row++;
+        $sheet->setCellValue('A' . $row, 'Total Consumption');
+        $sheet->setCellValue('C' . $row, $summary['total_units'] . ' kWh');
+        $sheet->setCellValue('D' . $row, 'Rs. ' . $summary['total_amount']);
+        
+        $row++;
+        $sheet->setCellValue('A' . $row, 'Total Recharge');
+        $sheet->setCellValue('F' . $row, 'Rs. ' . $summary['total_recharge']);
+        
+        // Auto-size columns
+        foreach(range('A','G') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+        
+        // Header styling
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '002E6E']]
+        ];
+        $sheet->getStyle('A4:G4')->applyFromArray($headerStyle);
+        
+        $writer = new Xlsx($spreadsheet);
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+        
+        $writer->save('php://output');
+        exit;
+    }
+
+    private function downloadPdfReport($reportType, $filters)
+    {
+        $data = $this->getReportData($reportType, $filters);
+        $summary = $this->getSummaryData($data);
+        
+        $fileName = "Energy_Report_{$reportType}_" . date('Y-m-d') . ".pdf";
+
+        $html = view('exports.energy-pdf', [
+            'data' => $data,
+            'summary' => $summary,
+            'reportType' => $reportType,
+            'filters' => $filters
+        ])->render();
+
+        $pdf = PDF::loadHTML($html)
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'dpi' => 150,
+                'defaultFont' => 'sans-serif',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true
+            ]);
+
+        return $pdf->download($fileName);
+    }
+
+   private function getReportData($reportType, $filters)
+{
+    $rechargeSettings = RechargeSetting::first();
+    $unitRate = $rechargeSettings->unit_rate ?? 10;
+
+    \Log::info('=== GET REPORT DATA DEBUG ===');
+    \Log::info('Report Type: ' . $reportType);
+    \Log::info('Filters: ', $filters);
+    \Log::info('Unit Rate: ' . $unitRate);
+
+    switch($reportType) {
+        case 'daily':
+            $data = $this->getDailyReportData($unitRate, $filters);
+            break;
+        case 'monthly':
+            $data = $this->getMonthlyReportData($unitRate, $filters);
+            break;
+        case 'complete':
+            $dailyData = $this->getDailyReportData($unitRate, $filters);
+            $monthlyData = $this->getMonthlyReportData($unitRate, $filters);
+            $data = array_merge($dailyData, $monthlyData);
+            break;
+        default:
+            $data = $this->getDailyReportData($unitRate, $filters);
+    }
+
+    \Log::info('Final Data Count: ' . count($data));
+    \Log::info('Sample Data: ', $data[0] ?? []);
+
+    return $data;
+}
+
+   private function getDailyReportData($unitRate, $filters)
+{
+    $month = $filters['month'] ?? date('m');
+    $year = $filters['year'] ?? date('Y');
+
+    \Log::info('=== DAILY REPORT DATA DEBUG ===');
+    \Log::info('Month: ' . $month . ', Year: ' . $year);
+
+    try {
+        $consumptions = EnergyConsumption::whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->orderBy('date')
+            ->get();
+
+        \Log::info('Database Records Found: ' . $consumptions->count());
+
+        if ($consumptions->count() > 0) {
+            $processedData = $this->processDataWithBalance($consumptions, $unitRate);
+            \Log::info('Processed Data Count: ' . count($processedData));
+            return $processedData;
+        } else {
+            \Log::info('No data found in database, using dummy data');
+            return $this->getDummyDailyData($unitRate, $month, $year);
+        }
+
+    } catch (\Exception $e) {
+        \Log::error('Error in getDailyReportData: ' . $e->getMessage());
+        \Log::info('Using dummy data due to error');
+        return $this->getDummyDailyData($unitRate, $month, $year);
+    }
+}
+
+    private function getMonthlyReportData($unitRate, $filters)
+    {
+        $year = $filters['year'] ?? date('Y');
+
+        $consumptions = EnergyConsumption::whereYear('date', $year)
+            ->selectRaw('YEAR(date) as year, MONTH(date) as month, SUM(unit_consumed) as total_units')
+            ->groupBy('year', 'month')
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+
+        $data = [];
+        foreach($consumptions as $index => $consumption) {
+            $amount = $consumption->total_units * $unitRate;
+            
+            $data[] = [
+                'sr_no' => $index + 1,
+                'date' => date('F Y', mktime(0, 0, 0, $consumption->month, 1, $consumption->year)),
+                'unit_consumed' => $consumption->total_units,
+                'amount' => $amount,
+                'balance' => $this->calculateBalance($amount),
+                'recharge' => 0,
+                'remarks' => 'Monthly Consumption'
+            ];
+        }
+
+        return $data;
+    }
+
+    private function processDataWithBalance($consumptions, $unitRate)
+{
+    \Log::info('=== PROCESS DATA DEBUG ===');
+    \Log::info('Consumptions count: ' . $consumptions->count());
+    
+    $data = [];
+    $runningBalance = (float) $this->getCurrentBalance();
+    $rechargeSettings = RechargeSetting::first();
+
+    \Log::info('Starting Balance: ' . $runningBalance);
+    \Log::info('Unit Rate: ' . $unitRate);
+
+    foreach($consumptions as $index => $consumption) {
+        $unitConsumed = (float) $consumption->unit_consumed;
+        $amount = $unitConsumed * (float) $unitRate;
+        $recharge = 0;
+
+        // Process consumption
+        $runningBalance -= $amount;
+
+        // Check for auto-recharge
+        if($rechargeSettings && $runningBalance <= ($rechargeSettings->m_recharge_amount * 0.2)) {
+            $recharge = (float) $rechargeSettings->m_sanction_load;
+            $runningBalance += $recharge;
+        }
+
+        $rowData = [
+            'sr_no' => $index + 1,
+            'date' => $consumption->date->format('d-m-Y'),
+            'unit_consumed' => $unitConsumed,
+            'amount' => $amount,
+            'balance' => max(0, $runningBalance),
+            'recharge' => $recharge,
+            'remarks' => $recharge > 0 ? 'Auto Recharge' : 'Consumption'
+        ];
+        
+        $data[] = $rowData;
+        \Log::info('Processed Row ' . ($index + 1) . ': ', $rowData);
+    }
+
+    \Log::info('Final Processed Data Count: ' . count($data));
+    return $data;
+}
+
+    private function getSummaryData($data)
+{
+    // ✅ Ensure all values are floats before formatting
+    $totalUnits = (float) collect($data)->sum('unit_consumed');
+    $totalAmount = (float) collect($data)->sum('amount');
+    $totalRecharge = (float) collect($data)->sum('recharge');
+    $currentBalance = (float) $this->getCurrentBalance();
+
+    return [
+        'current_balance' => number_format($currentBalance, 2),
+        'total_units' => number_format($totalUnits, 2),
+        'total_amount' => number_format($totalAmount, 2),
+        'total_recharge' => number_format($totalRecharge, 2)
+    ];
+}
+
+    private function getCurrentBalance()
+    {
+        $rechargeSettings = RechargeSetting::first();
+        return $rechargeSettings->m_recharge_amount ?? 0;
+    }
+
+    private function calculateBalance($amount)
+    {
+        return max(0, $this->getCurrentBalance() - $amount);
     }
 
 }

@@ -828,7 +828,7 @@
         </div>
     </div>
     <!-- *************************************************************start line ghraph ******************************************************************    -->
-    <div class="container-fluid py-4">
+<div class="container-fluid py-4">
         <!-- Header -->
         <div class="row mb-4">
             <div class="col-md-6">
@@ -1256,13 +1256,13 @@
                                         <i class="fas fa-file-excel text-success me-2"></i>Excel Format
                                     </label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="downloadFormat" id="formatCSV"
-                                        value="csv">
-                                    <label class="form-check-label fw-bold" for="formatCSV">
-                                        <i class="fas fa-file-csv text-primary me-2"></i>CSV Format
-                                    </label>
-                                </div>
+                                <!-- <div class="form-check"> -->
+                                    <!-- <input class="form-check-input" type="radio" name="downloadFormat" id="formatCSV"
+                                        value="csv"> -->
+                                    <!-- <label class="form-check-label fw-bold" for="formatCSV"> -->
+                                        <!-- <i class="fas fa-file-csv text-primary me-2"></i> -->
+                                    <!-- </label> -->
+                                <!-- </div> -->
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="downloadFormat" id="formatPDF"
                                         value="pdf">
@@ -1287,7 +1287,7 @@
                 </div>
             </div>
         </div>
-    </div>
+</div>
     
     <!-- *****************************************************End********************************************** -->
     </div>
@@ -3021,7 +3021,7 @@
 </script> -->
 
 
-<script>
+<!-- <script>
     // Global variables
     let dailyUnitChart, dailyAmountChart, monthlyUnitChart, monthlyAmountChart;
     let selectedDownloadType = 'daily';
@@ -4197,7 +4197,7 @@
 
             // Current balance info
             doc.text(
-                `Current Balance: Rs. ${currentBalance.toFixed(2)} | Recharge Amount: Rs. ${rechargeSettings?.m_sanction_load || 0} | Unit Rate: Rs. ${rechargeSettings?.unit_rate}/kWh`,
+                `Current Balance: Rs. ${currentBalance.toFixed(2)}  | Unit Rate: Rs. ${rechargeSettings?.unit_rate}/kWh`,
                 105, 28, { align: 'center' }
             );
 
@@ -4346,10 +4346,1218 @@
             }
         }, 5000);
     }
+</script> -->
+
+
+<script>
+    // Global variables
+    let dailyUnitChart, dailyAmountChart, monthlyUnitChart, monthlyAmountChart;
+    let selectedDownloadType = 'daily';
+    
+    // Balance tracking system
+    let balanceHistory = [];
+    let currentBalance = 0;
+    
+    // Initialize balance from display
+    function initializeBalance() {
+        const balanceElement = document.querySelector('.status-box .status-box');
+        if (balanceElement) {
+            const balanceText = balanceElement.textContent.trim();
+            currentBalance = parseFloat(balanceText.replace(/[^\d.]/g, '')) || {{ $rechargeSetting->m_recharge_amount }};
+            
+            // Store initial balance in history
+            balanceHistory = [{
+                date: new Date().toISOString().split('T')[0],
+                type: 'initial',
+                amount: currentBalance,
+                balance: currentBalance,
+                description: 'Initial Balance'
+            }];
+            
+            console.log('💰 Initial Balance:', currentBalance);
+        }
+        return currentBalance;
+    }
+    
+    let rechargeSettings = {
+        m_recharge_amount: {{ $rechargeSetting->m_recharge_amount }},
+        m_sanction_load: {{ $rechargeSetting->m_sanction_load }},
+        unit_rate: 10
+    };
+
+    // CSRF Token for AJAX requests
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Initializing Energy Dashboard with Balance Tracking...');
+        
+        // Initialize balance system first
+        currentBalance = initializeBalance();
+        
+        initializeCharts();
+        setupEventListeners();
+        fetchRealData();
+    });
+
+    // Balance Management Functions
+    function updateBalanceDisplay(newBalance) {
+        const balanceElement = document.querySelector('.status-box .status-box');
+        if (balanceElement) {
+            balanceElement.textContent = newBalance.toFixed(2);
+            currentBalance = newBalance;
+        }
+    }
+
+    function addBalanceTransaction(date, type, amount, description = '') {
+        const transaction = {
+            date: date,
+            type: type, // 'consumption', 'recharge', 'initial'
+            amount: amount,
+            balance: currentBalance,
+            description: description
+        };
+        
+        balanceHistory.push(transaction);
+        console.log('💳 Balance Transaction:', transaction);
+    }
+
+    function calculateConsumption(unitConsumed) {
+        return unitConsumed * rechargeSettings.unit_rate;
+    }
+
+    function processConsumption(date, unitConsumed) {
+        const consumptionAmount = calculateConsumption(unitConsumed);
+        
+        if (currentBalance >= consumptionAmount) {
+            currentBalance -= consumptionAmount;
+            
+            // Add to transaction history
+            addBalanceTransaction(
+                date, 
+                'consumption', 
+                -consumptionAmount, 
+                `Energy Consumption: ${unitConsumed} kWh`
+            );
+            
+            updateBalanceDisplay(currentBalance);
+            return true;
+        } else {
+            console.warn('❌ Insufficient balance for consumption');
+            return false;
+        }
+    }
+
+    function processRecharge(date, rechargeAmount) {
+        currentBalance += rechargeAmount;
+        
+        // Add to transaction history
+        addBalanceTransaction(
+            date,
+            'recharge',
+            rechargeAmount,
+            `Balance Recharge`
+        );
+        
+        updateBalanceDisplay(currentBalance);
+        return true;
+    }
+
+    // Auto-recharge logic
+    function checkAutoRecharge(date) {
+        const rechargeThreshold = rechargeSettings.m_recharge_amount * 0.2; // 20% threshold
+        
+        if (currentBalance <= rechargeThreshold) {
+            console.log('🔄 Auto-recharge triggered');
+            processRecharge(date, rechargeSettings.m_sanction_load);
+            return rechargeSettings.m_sanction_load;
+        }
+        return 0;
+    }
+
+    function initializeCharts() {
+        console.log('📈 Initializing charts...');
+
+        // Daily Unit Chart
+        const dailyUnitCtx = document.getElementById('dailyUnitChart').getContext('2d');
+        dailyUnitChart = new Chart(dailyUnitCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Unit Consumption (kWh)',
+                    data: [],
+                    borderColor: '#002E6E',
+                    backgroundColor: 'rgba(0, 46, 110, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#002E6E',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            borderDash: [5, 5]
+                        }
+                    }
+                }
+            }
+        });
+
+        // Daily Amount Chart
+        const dailyAmountCtx = document.getElementById('dailyAmountChart').getContext('2d');
+        dailyAmountChart = new Chart(dailyAmountCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Amount (Rs.)',
+                    data: [],
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#28a745',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            borderDash: [5, 5]
+                        }
+                    }
+                }
+            }
+        });
+
+        // Monthly Unit Chart
+        const monthlyUnitCtx = document.getElementById('monthlyUnitChart').getContext('2d');
+        monthlyUnitChart = new Chart(monthlyUnitCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Monthly Units (kWh)',
+                    data: [],
+                    backgroundColor: 'rgba(0, 46, 110, 0.7)',
+                    borderColor: '#002E6E',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            borderDash: [5, 5]
+                        }
+                    }
+                }
+            }
+        });
+
+        // Monthly Amount Chart
+        const monthlyAmountCtx = document.getElementById('monthlyAmountChart').getContext('2d');
+        monthlyAmountChart = new Chart(monthlyAmountCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Monthly Amount (Rs.)',
+                    data: [],
+                    backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                    borderColor: '#28a745',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            borderDash: [5, 5]
+                        }
+                    }
+                }
+            }
+        });
+
+        console.log('✅ Charts initialized');
+    }
+
+    function setupEventListeners() {
+        console.log('🔗 Setting up event listeners...');
+
+        // Daily filter buttons
+        document.getElementById('applyUnitFilter').addEventListener('click', updateDailyUnitChart);
+        document.getElementById('applyAmountFilter').addEventListener('click', updateDailyAmountChart);
+
+        // Monthly filter buttons
+        document.getElementById('applyMonthlyUnitFilter').addEventListener('click', updateMonthlyUnitChart);
+        document.getElementById('applyMonthlyAmountFilter').addEventListener('click', updateMonthlyAmountChart);
+
+        // Download modal options
+        document.querySelectorAll('.download-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.download-option').forEach(opt => {
+                    opt.classList.remove('active');
+                });
+                this.classList.add('active');
+                selectedDownloadType = this.dataset.type;
+            });
+        });
+
+        // Download button
+        document.getElementById('confirmDownload').addEventListener('click', downloadReport);
+
+        console.log('✅ Event listeners setup completed');
+    }
+
+    // Real data fetch function
+    async function fetchRealData() {
+        console.log('📊 Fetching real data from server...');
+
+        try {
+            // Stats fetch karein
+            const statsResponse = await fetch('/admin/energy-stats');
+            const statsData = await statsResponse.json();
+
+            if (statsData.success) {
+                updateStatsDisplay(statsData);
+            }
+
+            // Automatically load ALL charts with current data
+            await loadInitialCharts();
+
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            // Even if API fails, try to load initial charts
+            await loadInitialCharts();
+        }
+    }
+
+    // Load initial ALL charts with current data
+    async function loadInitialCharts() {
+        console.log('🔄 Loading initial ALL charts...');
+        
+        // Set dropdowns to current values
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
+        
+        // Set daily filter dropdowns
+        const unitMonthSelect = document.getElementById('unitMonthSelect');
+        const unitYearSelect = document.getElementById('unitYearSelect');
+        if (unitMonthSelect && unitYearSelect) {
+            unitMonthSelect.value = currentMonth;
+            unitYearSelect.value = currentYear;
+        }
+        
+        const amountMonthSelect = document.getElementById('amountMonthSelect');
+        const amountYearSelect = document.getElementById('amountYearSelect');
+        if (amountMonthSelect && amountYearSelect) {
+            amountMonthSelect.value = currentMonth;
+            amountYearSelect.value = currentYear;
+        }
+        
+        // Set monthly filter dropdowns
+        const monthlyUnitYearSelect = document.getElementById('monthlyUnitYearSelect');
+        const monthlyAmountYearSelect = document.getElementById('monthlyAmountYearSelect');
+        if (monthlyUnitYearSelect && monthlyAmountYearSelect) {
+            monthlyUnitYearSelect.value = currentYear;
+            monthlyAmountYearSelect.value = currentYear;
+        }
+        
+        // Load ALL charts with current data
+        await updateDailyUnitChart();
+        await updateDailyAmountChart();
+        await updateMonthlyUnitChart();
+        await updateMonthlyAmountChart();
+        
+        console.log('✅ All charts loaded successfully');
+    }
+
+    function updateStatsDisplay(statsData) {
+        const current = statsData.current_month;
+        const last = statsData.last_month;
+
+        if (current) {
+            // Daily unit stats
+            document.getElementById('dailyUnitCurrent').textContent = (current.avg_units || 0).toFixed(2);
+            document.getElementById('dailyUnitMax').textContent = (current.max_units || 0).toFixed(2);
+            document.getElementById('dailyUnitAvg').textContent = (current.avg_units || 0).toFixed(2);
+            document.getElementById('dailyUnitMaxKwh').textContent = (current.max_units || 0).toFixed(2);
+
+            // Daily amount stats
+            document.getElementById('dailyAmountCurrent').textContent = (current.avg_amount || 0).toFixed(2);
+            document.getElementById('dailyAmountMax').textContent = (current.max_amount || 0).toFixed(2);
+            document.getElementById('dailyAmountAvg').textContent = (current.avg_amount || 0).toFixed(2);
+            document.getElementById('dailyAmountMaxRs').textContent = (current.max_amount || 0).toFixed(2);
+
+            // Monthly unit stats
+            document.getElementById('monthlyUnitCurrent').textContent = (current.total_units || 0).toFixed(2);
+            document.getElementById('monthlyUnitMax').textContent = (current.max_monthly_units || 0).toFixed(2);
+            document.getElementById('monthlyUnitAvg').textContent = (current.avg_monthly_units || 0).toFixed(2);
+            document.getElementById('monthlyUnitMaxKwh').textContent = (current.max_monthly_units || 0).toFixed(2);
+
+            // Monthly amount stats
+            document.getElementById('monthlyAmountCurrent').textContent = (current.total_amount || 0).toFixed(2);
+            document.getElementById('monthlyAmountMax').textContent = (current.max_monthly_amount || 0).toFixed(2);
+            document.getElementById('monthlyAmountAvg').textContent = (current.avg_monthly_amount || 0).toFixed(2);
+            document.getElementById('monthlyAmountMaxRs').textContent = (current.max_monthly_amount || 0).toFixed(2);
+
+            // Percentage changes calculate karein
+            if (last && last.avg_units > 0) {
+                const unitChange = ((current.avg_units - last.avg_units) / last.avg_units * 100).toFixed(2);
+                document.getElementById('unitChangePercent').textContent = `${Math.abs(unitChange)}%`;
+                const unitChangeElement = document.querySelector('#unitChangePercent').closest('.metric-change');
+                unitChangeElement.className = `metric-change ${unitChange >= 0 ? 'up' : 'down'}`;
+                unitChangeElement.querySelector('i').className = unitChange >= 0 ? 'fas fa-arrow-up me-1' :
+                    'fas fa-arrow-down me-1';
+            }
+
+            if (last && last.avg_amount > 0) {
+                const amountChange = ((current.avg_amount - last.avg_amount) / last.avg_amount * 100).toFixed(2);
+                document.getElementById('amountChangePercent').textContent = `${Math.abs(amountChange)}%`;
+                const amountChangeElement = document.querySelector('#amountChangePercent').closest('.metric-change');
+                amountChangeElement.className = `metric-change ${amountChange >= 0 ? 'up' : 'down'}`;
+                amountChangeElement.querySelector('i').className = amountChange >= 0 ? 'fas fa-arrow-up me-1' :
+                    'fas fa-arrow-down me-1';
+            }
+        }
+    }
+
+    async function updateDailyUnitChart() {
+        console.log('🔄 Updating daily unit chart with real data...');
+
+        const month = parseInt(document.getElementById('unitMonthSelect').value);
+        const year = parseInt(document.getElementById('unitYearSelect').value);
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        // Update display
+        document.getElementById('dailyUnitMonth').textContent = `${monthNames[month]} ${year}`;
+
+        // Show loading
+        document.getElementById('unitChartLoading').style.display = 'block';
+
+        try {
+            // Server se data fetch karein
+            const response = await fetch(`/admin/energy-data?type=daily&month=${month + 1}&year=${year}`);
+            const result = await response.json();
+
+            if (result.success) {
+                const apiData = result.data;
+
+                // Chart data prepare karein
+                const labels = [];
+                const data = [];
+
+                // Puri month ke liye data prepare karein
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                for (let day = 1; day <= daysInMonth; day++) {
+                    labels.push(`Day ${day}`);
+
+                    // Corresponding data find karein
+                    const dayData = apiData.find(item => item.day === day);
+                    data.push(dayData ? dayData.total_units : 0);
+                }
+
+                // Update chart
+                dailyUnitChart.data.labels = labels;
+                dailyUnitChart.data.datasets[0].data = data;
+                dailyUnitChart.update();
+
+                // Stats update karein
+                updateUnitStats(data);
+            }
+        } catch (error) {
+            console.error('Error fetching daily unit data:', error);
+            
+        } finally {
+            // Hide loading
+            document.getElementById('unitChartLoading').style.display = 'none';
+        }
+    }
+
+    function updateUnitStats(data) {
+        const nonZeroData = data.filter(val => val > 0);
+        if (nonZeroData.length > 0) {
+            const currentDay = Math.min(new Date().getDate(), nonZeroData.length) - 1;
+            const unitCurrent = nonZeroData[currentDay] || 0;
+            const unitAvg = (nonZeroData.reduce((a, b) => a + b, 0) / nonZeroData.length).toFixed(2);
+            const unitMax = Math.max(...nonZeroData).toFixed(2);
+
+            document.getElementById('dailyUnitCurrent').textContent = unitCurrent.toFixed(2);
+            document.getElementById('dailyUnitMax').textContent = unitMax;
+            document.getElementById('dailyUnitAvg').textContent = unitAvg;
+            document.getElementById('dailyUnitMaxKwh').textContent = unitMax;
+        }
+    }
+
+    async function updateDailyAmountChart() {
+        console.log('🔄 Updating daily amount chart with real data...');
+
+        const month = parseInt(document.getElementById('amountMonthSelect').value);
+        const year = parseInt(document.getElementById('amountYearSelect').value);
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        // Update display
+        document.getElementById('dailyAmountMonth').textContent = `${monthNames[month]} ${year}`;
+
+        // Show loading
+        document.getElementById('amountChartLoading').style.display = 'block';
+
+        try {
+            // Server se data fetch karein
+            const response = await fetch(`/admin/energy-data?type=daily&month=${month + 1}&year=${year}`);
+            const result = await response.json();
+
+            if (result.success) {
+                const apiData = result.data;
+
+                // Chart data prepare karein
+                const labels = [];
+                const data = [];
+
+                // Puri month ke liye data prepare karein
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                for (let day = 1; day <= daysInMonth; day++) {
+                    labels.push(`Day ${day}`);
+
+                    // Corresponding data find karein
+                    const dayData = apiData.find(item => item.day === day);
+                    data.push(dayData ? dayData.total_amount : 0);
+                }
+
+                // Update chart
+                dailyAmountChart.data.labels = labels;
+                dailyAmountChart.data.datasets[0].data = data;
+                dailyAmountChart.update();
+
+                // Stats update karein
+                updateAmountStats(data);
+            }
+        } catch (error) {
+            console.error('Error fetching daily amount data:', error);
+            
+        } finally {
+            // Hide loading
+            document.getElementById('amountChartLoading').style.display = 'none';
+        }
+    }
+
+    function updateAmountStats(data) {
+        const nonZeroData = data.filter(val => val > 0);
+        if (nonZeroData.length > 0) {
+            const currentDay = Math.min(new Date().getDate(), nonZeroData.length) - 1;
+            const amountCurrent = nonZeroData[currentDay] || 0;
+            const amountAvg = (nonZeroData.reduce((a, b) => a + b, 0) / nonZeroData.length).toFixed(2);
+            const amountMax = Math.max(...nonZeroData).toFixed(2);
+
+            document.getElementById('dailyAmountCurrent').textContent = amountCurrent.toFixed(2);
+            document.getElementById('dailyAmountMax').textContent = amountMax;
+            document.getElementById('dailyAmountAvg').textContent = amountAvg;
+            document.getElementById('dailyAmountMaxRs').textContent = amountMax;
+        }
+    }
+
+    async function updateMonthlyUnitChart() {
+        console.log('🔄 Updating monthly unit chart with real data...');
+
+        const year = parseInt(document.getElementById('monthlyUnitYearSelect').value);
+
+        // Update display
+        document.getElementById('monthlyUnitYear').textContent = year;
+
+        // Show loading
+        document.getElementById('monthlyUnitLoading').style.display = 'block';
+
+        try {
+            // Server se data fetch karein
+            const response = await fetch(`/admin/energy-data?type=monthly&year=${year}`);
+            const result = await response.json();
+
+            if (result.success) {
+                const apiData = result.data;
+
+                // Chart data prepare karein
+                const data = Array(12).fill(0);
+
+                apiData.forEach(item => {
+                    const monthIndex = item.month - 1;
+                    data[monthIndex] = item.total_units;
+                });
+
+                // Update chart
+                monthlyUnitChart.data.datasets[0].data = data;
+                monthlyUnitChart.update();
+
+                // Stats update karein
+                updateMonthlyUnitStats(data);
+            }
+        } catch (error) {
+            console.error('Error fetching monthly unit data:', error);
+            
+        } finally {
+            // Hide loading
+            document.getElementById('monthlyUnitLoading').style.display = 'none';
+        }
+    }
+
+    function updateMonthlyUnitStats(data) {
+        const nonZeroData = data.filter(val => val > 0);
+        if (nonZeroData.length > 0) {
+            const currentMonth = new Date().getMonth();
+            const unitCurrent = data[currentMonth] || 0;
+            const unitAvg = (nonZeroData.reduce((a, b) => a + b, 0) / nonZeroData.length).toFixed(2);
+            const unitMax = Math.max(...nonZeroData).toFixed(2);
+
+            document.getElementById('monthlyUnitCurrent').textContent = unitCurrent.toFixed(2);
+            document.getElementById('monthlyUnitMax').textContent = unitMax;
+            document.getElementById('monthlyUnitAvg').textContent = unitAvg;
+            document.getElementById('monthlyUnitMaxKwh').textContent = unitMax;
+        }
+    }
+
+    async function updateMonthlyAmountChart() {
+        console.log('🔄 Updating monthly amount chart with real data...');
+
+        const year = parseInt(document.getElementById('monthlyAmountYearSelect').value);
+
+        // Update display
+        document.getElementById('monthlyAmountYear').textContent = year;
+
+        // Show loading
+        document.getElementById('monthlyAmountLoading').style.display = 'block';
+
+        try {
+            // Server se data fetch karein
+            const response = await fetch(`/admin/energy-data?type=monthly&year=${year}`);
+            const result = await response.json();
+
+            if (result.success) {
+                const apiData = result.data;
+
+                // Chart data prepare karein
+                const data = Array(12).fill(0);
+
+                apiData.forEach(item => {
+                    const monthIndex = item.month - 1;
+                    data[monthIndex] = item.total_amount;
+                });
+
+                // Update chart
+                monthlyAmountChart.data.datasets[0].data = data;
+                monthlyAmountChart.update();
+
+                // Stats update karein
+                updateMonthlyAmountStats(data);
+            }
+        } catch (error) {
+            console.error('Error fetching monthly amount data:', error);
+            
+        } finally {
+            // Hide loading
+            document.getElementById('monthlyAmountLoading').style.display = 'none';
+        }
+    }
+
+    function updateMonthlyAmountStats(data) {
+        const nonZeroData = data.filter(val => val > 0);
+        if (nonZeroData.length > 0) {
+            const currentMonth = new Date().getMonth();
+            const amountCurrent = data[currentMonth] || 0;
+            const amountAvg = (nonZeroData.reduce((a, b) => a + b, 0) / nonZeroData.length).toFixed(2);
+            const amountMax = Math.max(...nonZeroData).toFixed(2);
+
+            document.getElementById('monthlyAmountCurrent').textContent = amountCurrent.toFixed(2);
+            document.getElementById('monthlyAmountMax').textContent = amountMax;
+            document.getElementById('monthlyAmountAvg').textContent = amountAvg;
+            document.getElementById('monthlyAmountMaxRs').textContent = amountMax;
+        }
+    }
+
+    // ✅ UPDATED: Download Report Function with AJAX call to controller
+// async function downloadReport() {
+    //     console.log('💾 Downloading report with AJAX...');
+
+    //     const format = document.querySelector('input[name="downloadFormat"]:checked').value;
+        
+    //     try {
+    //         // Show loading state
+    //         const downloadBtn = document.getElementById('confirmDownload');
+    //         const originalText = downloadBtn.innerHTML;
+    //         downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Generating...';
+    //         downloadBtn.disabled = true;
+
+    //         // Get current filter values
+    //         const filters = getCurrentFilters();
+            
+    //         console.log('Sending request to server:', {
+    //             type: format,
+    //             report_type: selectedDownloadType,
+    //             ...filters
+    //         });
+
+    //         // Make API request to server - AJAX call to controller
+    //         const response = await fetch('/admin/download-report', {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //                 'X-CSRF-TOKEN': csrfToken,
+    //                 'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/pdf'
+    //             },
+    //             body: JSON.stringify({
+    //                 type: format,
+    //                 report_type: selectedDownloadType,
+    //                 ...filters
+    //             })
+    //         });
+
+    //         if (response.ok) {
+    //             // Get the blob data
+    //             const blob = await response.blob();
+                
+    //             // Create download link
+    //             const url = window.URL.createObjectURL(blob);
+    //             const a = document.createElement('a');
+    //             a.style.display = 'none';
+    //             a.href = url;
+                
+    //             // Get filename from response headers
+    //             const contentDisposition = response.headers.get('content-disposition');
+    //             let filename = `Energy_Report_${selectedDownloadType}_${new Date().toISOString().split('T')[0]}.${format}`;
+                
+    //             if (contentDisposition) {
+    //                 const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+    //                 if (filenameMatch) {
+    //                     filename = filenameMatch[1];
+    //                 }
+    //             }
+                
+    //             a.download = filename;
+    //             document.body.appendChild(a);
+    //             a.click();
+                
+    //             // Clean up
+    //             window.URL.revokeObjectURL(url);
+    //             document.body.removeChild(a);
+
+    //             showSuccessMessage(`Report downloaded successfully as ${format.toUpperCase()}!`);
+    //         } else {
+    //             // Handle server errors
+    //             const errorData = await response.json();
+    //             throw new Error(errorData.message || 'Failed to generate report');
+    //         }
+            
+    //     } catch (error) {
+    //         console.error('Error downloading report:', error);
+    //         showErrorMessage('Error generating report: ' + error.message);
+    //     } finally {
+    //         // Restore button state
+    //         const downloadBtn = document.getElementById('confirmDownload');
+    //         if (downloadBtn) {
+    //             downloadBtn.innerHTML = '<i class="fas fa-download me-1"></i> Generate & Download';
+    //             downloadBtn.disabled = false;
+    //         }
+            
+    //         // Close modal
+    //         const modal = bootstrap.Modal.getInstance(document.getElementById('downloadModal'));
+    //         if (modal) modal.hide();
+    //     }
+    // }
+
+    // JS code mein yeh fix karein
+
+    // ✅ UPDATED: Real Data Processing with Balance Tracking
+async function getRealTimeDataWithBalance() {
+    console.log('🔄 Fetching real-time data with balance tracking...');
+    
+    try {
+        const filters = getCurrentFilters();
+        const month = filters.month || new Date().getMonth() + 1;
+        const year = filters.year || new Date().getFullYear();
+        
+        // Fetch real data from server
+        const response = await fetch(`/admin/energy-data?type=daily&month=${month}&year=${year}`);
+        
+        if (response.ok) {
+            const result = await response.json();
+            
+            if (result.success && result.data && result.data.length > 0) {
+                return processRealDataWithBalance(result.data, month, year);
+            }
+        }
+        
+        // If no real data, return empty array
+        return [];
+        
+    } catch (error) {
+        console.error('Error fetching real-time data:', error);
+        return [];
+    }
+}
+
+// ✅ Process Real Data with Balance Tracking
+function processRealDataWithBalance(apiData, month, year) {
+    const processedData = [];
+    let runningBalance = currentBalance; // Start with current balance
+    
+    apiData.forEach((item, index) => {
+        const unitConsumed = item.total_units || 0;
+        const amount = item.total_amount || 0;
+        const date = `${year}-${month.toString().padStart(2, '0')}-${item.day.toString().padStart(2, '0')}`;
+        
+        let rechargeAmount = 0;
+        
+        // Process consumption
+        if (unitConsumed > 0) {
+            runningBalance -= amount;
+            
+            // Check for auto-recharge
+            if (runningBalance <= (rechargeSettings.m_recharge_amount * 0.2)) {
+                rechargeAmount = rechargeSettings.m_sanction_load;
+                runningBalance += rechargeAmount;
+            }
+        }
+        
+        processedData.push({
+            srNo: index + 1,
+            date: date,
+            unitConsumed: unitConsumed,
+            amount: amount,
+            balance: Math.max(0, runningBalance),
+            recharge: rechargeAmount,
+            actualBalance: runningBalance,
+            remarks: rechargeAmount > 0 ? 'Auto Recharge' : 'Consumption'
+        });
+    });
+    
+    console.log('✅ Real data processed with balance tracking');
+    return processedData;
+}
+
+// ✅ UPDATED: Download Report Function - Real Data
+async function downloadReport() {
+    console.log('💾 Downloading report with REAL DATA...');
+
+    const format = document.querySelector('input[name="downloadFormat"]:checked').value;
+    
+    try {
+        // Show loading state
+        const downloadBtn = document.getElementById('confirmDownload');
+        downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Generating...';
+        downloadBtn.disabled = true;
+
+        // Get REAL data with balance tracking
+        const realData = await getRealTimeDataWithBalance();
+        
+        let reportData = [];
+        
+        if (realData.length > 0) {
+            console.log('Using REAL data for report:', realData.length, 'records');
+            reportData = realData;
+        } else {
+            console.log('No real data available, using sample data');
+            reportData = generateSampleDataWithBalance();
+        }
+
+        console.log('Final report data:', reportData);
+
+        // Generate report based on format
+        if (format === 'excel') {
+            await downloadExcelReportWithRealData(reportData);
+        } else if (format === 'pdf') {
+            await downloadPDFReportWithRealData(reportData);
+        } else {
+            await downloadCSVReportWithRealData(reportData);
+        }
+
+        showSuccessMessage(`Report downloaded successfully as ${format.toUpperCase()}!`);
+        
+    } catch (error) {
+        console.error('Error downloading report:', error);
+        showErrorMessage('Error generating report: ' + error.message);
+    } finally {
+        // Restore button state
+        const downloadBtn = document.getElementById('confirmDownload');
+        if (downloadBtn) {
+            downloadBtn.innerHTML = '<i class="fas fa-download me-1"></i> Generate & Download';
+            downloadBtn.disabled = false;
+        }
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('downloadModal'));
+        if (modal) modal.hide();
+    }
+}
+
+// ✅ Excel Report with Real Data
+async function downloadExcelReportWithRealData(reportData) {
+    console.log('📊 Generating Excel report with REAL DATA...');
+
+    try {
+        // Prepare data for Excel
+        const excelData = reportData.map((item, index) => {
+            return {
+                'Sr.No': item.srNo,
+                'Date': formatDate(item.date),
+                'Unit Consumed (kWh)': item.unitConsumed.toFixed(2),
+                'Amount (Rs.)': item.amount.toFixed(2),
+                'Balance (Rs.)': item.balance.toFixed(2),
+                'Recharge (Rs.)': item.recharge.toFixed(2),
+                'Remarks': item.remarks
+            };
+        });
+
+        // Add summary section
+        excelData.push(
+            { 'Sr.No': '', 'Date': '', 'Unit Consumed (kWh)': '', 'Amount (Rs.)': '', 'Balance (Rs.)': '', 'Recharge (Rs.)': '', 'Remarks': '' },
+            { 'Sr.No': '', 'Date': 'SUMMARY', 'Unit Consumed (kWh)': '', 'Amount (Rs.)': '', 'Balance (Rs.)': '', 'Recharge (Rs.)': '', 'Remarks': '' },
+            { 'Sr.No': '', 'Date': 'Current Balance', 'Unit Consumed (kWh)': '', 'Amount (Rs.)': '', 'Balance (Rs.)': currentBalance.toFixed(2), 'Recharge (Rs.)': '', 'Remarks': '' },
+            { 'Sr.No': '', 'Date': 'Total Consumption', 'Unit Consumed (kWh)': reportData.reduce((sum, item) => sum + item.unitConsumed, 0).toFixed(2), 'Amount (Rs.)': reportData.reduce((sum, item) => sum + item.amount, 0).toFixed(2), 'Balance (Rs.)': '', 'Recharge (Rs.)': '', 'Remarks': '' },
+            { 'Sr.No': '', 'Date': 'Total Recharge', 'Unit Consumed (kWh)': '', 'Amount (Rs.)': '', 'Balance (Rs.)': '', 'Recharge (Rs.)': reportData.reduce((sum, item) => sum + item.recharge, 0).toFixed(2), 'Remarks': '' }
+        );
+
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(excelData);
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Energy Report');
+
+        const fileName = `Energy_Report_${selectedDownloadType}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+        XLSX.writeFile(wb, fileName);
+
+        console.log('✅ Excel file downloaded successfully with REAL DATA');
+
+    } catch (error) {
+        console.error('Error generating Excel:', error);
+        throw new Error('Failed to generate Excel file: ' + error.message);
+    }
+}
+
+// ✅ Generate Sample Data (Fallback)
+function generateSampleDataWithBalance() {
+    console.log('🎯 Generating sample data as fallback...');
+    
+    const sampleData = [];
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
+    
+    let runningBalance = currentBalance;
+    
+    // Generate sample data for current month
+    const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+    
+    for (let i = 0; i < Math.min(daysInMonth, 15); i++) {
+        const unitConsumed = Math.floor(Math.random() * 15) + 5;
+        const amount = unitConsumed * rechargeSettings.unit_rate;
+        const day = i + 1;
+        const date = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        
+        let rechargeAmount = 0;
+        
+        runningBalance -= amount;
+        
+        if (runningBalance <= (rechargeSettings.m_recharge_amount * 0.2)) {
+            rechargeAmount = rechargeSettings.m_sanction_load;
+            runningBalance += rechargeAmount;
+        }
+        
+        sampleData.push({
+            srNo: i + 1,
+            date: date,
+            unitConsumed: unitConsumed,
+            amount: amount,
+            balance: Math.max(0, runningBalance),
+            recharge: rechargeAmount,
+            actualBalance: runningBalance,
+            remarks: rechargeAmount > 0 ? 'Auto Recharge' : 'Consumption'
+        });
+    }
+    
+    return sampleData;
+}
+
+//  async function downloadReport() {
+//     console.log('💾 Downloading report with AJAX...');
+
+//     const format = document.querySelector('input[name="downloadFormat"]:checked').value;
+    
+//     try {
+//         // Show loading state
+//         const downloadBtn = document.getElementById('confirmDownload');
+//         downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Generating...';
+//         downloadBtn.disabled = true;
+
+//         // Get current filter values
+//         const filters = getCurrentFilters();
+        
+//         console.log('Sending request to server:', {
+//             type: format,
+//             report_type: selectedDownloadType,
+//             ...filters
+//         });
+
+//         // ✅ CORRECTED: Use the right URL - /admin/admin/download-report
+//         const formData = new FormData();
+//         formData.append('type', format);
+//         formData.append('report_type', selectedDownloadType);
+//         formData.append('month', filters.month || '');
+//         formData.append('year', filters.year || '');
+//         formData.append('_token', csrfToken);
+
+//         // ✅ CORRECTED URL: /admin/admin/download-report
+//         const response = await fetch('/admin/admin/download-report', {
+//             method: 'POST',
+//             headers: {
+//                 'X-Requested-With': 'XMLHttpRequest',
+//                 'X-CSRF-TOKEN': csrfToken
+//             },
+//             body: formData
+//         });
+
+//         console.log('Response status:', response.status);
+
+//         if (response.ok) {
+//             const blob = await response.blob();
+//             const url = window.URL.createObjectURL(blob);
+//             const a = document.createElement('a');
+//             a.style.display = 'none';
+//             a.href = url;
+            
+//             const contentDisposition = response.headers.get('content-disposition');
+//             let filename = `Energy_Report_${selectedDownloadType}_${new Date().toISOString().split('T')[0]}.${format}`;
+            
+//             if (contentDisposition) {
+//                 const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+//                 if (filenameMatch) filename = filenameMatch[1];
+//             }
+            
+//             a.download = filename;
+//             document.body.appendChild(a);
+//             a.click();
+//             window.URL.revokeObjectURL(url);
+//             document.body.removeChild(a);
+
+//             showSuccessMessage(`Report downloaded successfully as ${format.toUpperCase()}!`);
+//         } else {
+//             if (response.status === 404) {
+//                 throw new Error('Download service not found. Route: /admin/admin/download-report');
+//             } else if (response.status === 500) {
+//                 const errorData = await response.json();
+//                 throw new Error(errorData.message || 'Server error occurred.');
+//             } else {
+//                 throw new Error(`HTTP error! status: ${response.status}`);
+//             }
+//         }
+        
+//     } catch (error) {
+//         console.error('Error downloading report:', error);
+//         showErrorMessage('Error generating report: ' + error.message);
+//     } finally {
+//         const downloadBtn = document.getElementById('confirmDownload');
+//         if (downloadBtn) {
+//             downloadBtn.innerHTML = '<i class="fas fa-download me-1"></i> Generate & Download';
+//             downloadBtn.disabled = false;
+//         }
+        
+//         const modal = bootstrap.Modal.getInstance(document.getElementById('downloadModal'));
+//         if (modal) modal.hide();
+//     }
+// }
+
+    // ✅ ADD: Helper function to get current filters
+    function getCurrentFilters() {
+        const filters = {};
+        
+        // Get daily filter values from currently active tab
+        if (document.querySelector('#daily').classList.contains('active')) {
+            const unitMonthSelect = document.getElementById('unitMonthSelect');
+            const unitYearSelect = document.getElementById('unitYearSelect');
+            if (unitMonthSelect && unitYearSelect) {
+                filters.month = parseInt(unitMonthSelect.value) + 1; // Convert to 1-based month
+                filters.year = parseInt(unitYearSelect.value);
+            }
+        } 
+        // Get monthly filter values
+        else if (document.querySelector('#monthly').classList.contains('active')) {
+            const monthlyUnitYearSelect = document.getElementById('monthlyUnitYearSelect');
+            if (monthlyUnitYearSelect) {
+                filters.year = parseInt(monthlyUnitYearSelect.value);
+            }
+        }
+        
+        return filters;
+    }
+        
+    
+
+    // ✅ NEW: Helper function to get current filter values
+    function getCurrentFilters() {
+        const filters = {};
+        
+        // Get daily filter values
+        const unitMonthSelect = document.getElementById('unitMonthSelect');
+        const unitYearSelect = document.getElementById('unitYearSelect');
+        if (unitMonthSelect && unitYearSelect) {
+            filters.month = parseInt(unitMonthSelect.value) + 1; // Convert to 1-based month
+            filters.year = parseInt(unitYearSelect.value);
+        }
+        
+        // Get monthly filter values
+        const monthlyUnitYearSelect = document.getElementById('monthlyUnitYearSelect');
+        if (monthlyUnitYearSelect && !filters.year) {
+            filters.year = parseInt(monthlyUnitYearSelect.value);
+        }
+        
+        return filters;
+    }
+
+    // Utility function to format dates
+    function formatDate(dateString) {
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+        } catch (error) {
+            return dateString;
+        }
+    }
+
+    function showSuccessMessage(message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-success success-alert';
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle me-2 fs-5"></i>
+                <div>
+                    <strong>Success!</strong><br>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+
+        document.body.appendChild(alertDiv);
+
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+
+    function showErrorMessage(message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger success-alert';
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-circle me-2 fs-5"></i>
+                <div>
+                    <strong>Error!</strong><br>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+
+        document.body.appendChild(alertDiv);
+
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
 </script>
-
-
-
 
 </body>
 
