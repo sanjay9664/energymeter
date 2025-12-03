@@ -10,6 +10,8 @@ use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\RolesController;
 use App\Http\Controllers\Backend\SiteController;
 use App\Http\Controllers\Admin\RechargeSettingsController;
+use App\Http\Controllers\BillController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -97,7 +99,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
     
     Route::post('/download-report', [SiteController::class, 'downloadReport'])->name('download.report');
     Route::get('/energy-data-Consumption', [SiteController::class, 'getEnergyConsumptionData'])->name('energy.data.consumption');
-
+    Route::get('/sites/{site}/bill', [BillController::class, 'downloadMonthly'])
+        ->name('sites.bill.download');
 
 })->middleware('auth:admin');
 
